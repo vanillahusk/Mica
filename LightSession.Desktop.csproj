@@ -5,8 +5,8 @@
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>LightSession.Desktop</AssemblyName>
+    <AssemblyName>Mica</AssemblyName>
     <RootNamespace>LightSession.Desktop</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 </Project>

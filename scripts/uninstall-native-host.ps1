@@ -1,10 +1,10 @@
 $registries = @(
-  'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.lightsession.desktop',
-  'HKCU:\Software\Microsoft\Edge\NativeMessagingHosts\com.lightsession.desktop'
+  'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.mica.desktop',
+  'HKCU:\Software\Microsoft\Edge\NativeMessagingHosts\com.mica.desktop'
 )
 foreach ($registry in $registries) {
   Remove-Item -LiteralPath $registry -Recurse -Force -ErrorAction SilentlyContinue
 }
-$manifestPath = Join-Path $env:LOCALAPPDATA 'LightSession\native-host\com.lightsession.desktop.json'
+$manifestPath = Join-Path $env:LOCALAPPDATA 'Mica\native-host\com.mica.desktop.json'
 Remove-Item -LiteralPath $manifestPath -Force -ErrorAction SilentlyContinue
-Write-Host 'LightSession native host uninstalled.'
+Write-Host 'Mica native host uninstalled.'

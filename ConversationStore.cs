@@ -15,7 +15,7 @@ public sealed class ConversationStore
 
     public static string AppDataDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "LightSession"
+        "Mica"
     );
 
     public static string ConversationsDirectory { get; } = Path.Combine(AppDataDirectory, "conversations");

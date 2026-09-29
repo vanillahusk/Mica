@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace LightSession.Desktop;
 
@@ -32,6 +33,7 @@ public partial class MainWindow : Window
 
     private async Task InitializeAsync()
     {
+        UpdateConnectionStatus();
         await ReloadConversationsAsync();
         watcher = new FileSystemWatcher(ConversationStore.ConversationsDirectory, "*.json")
         {
@@ -134,6 +136,25 @@ public partial class MainWindow : Window
         SetMode("read");
     }
 
+    private void UpdateConnectionStatus()
+    {
+        var connected = NativeHostInstaller.IsRegistered();
+        ConnectionDot.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(connected ? "#63D6A2" : "#E9A15B"));
+        ConnectionLabel.Text = connected ? "ChatGPT 已连接" : "ChatGPT 未连接";
+        ConnectionHint.Text = connected ? "在扩展中点击“同步到 Mica”" : "连接后可一键同步会话";
+        HeroConnectButton.Content = connected ? "已连接 · 查看方法" : "连接 ChatGPT";
+    }
+
+    private void ConnectChatGpt_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ConnectionWindow { Owner = this };
+        if (dialog.ShowDialog() == true)
+        {
+            UpdateConnectionStatus();
+            MessageBox.Show(this, "连接完成。\n\n现在重新加载 LightSession 扩展，打开 ChatGPT 对话，然后点击右侧目录中的“同步到 Mica”。", "Mica 已连接", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
     private void OpenFile_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog { Filter = "Markdown 文档|*.md;*.markdown;*.txt|所有文件|*.*" };
@@ -199,7 +220,19 @@ public partial class MainWindow : Window
         EditButton.IsEnabled = currentPath is not null;
     }
 
-    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        SearchHint.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+        ApplyFilter();
+    }
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void Maximize_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
+    }
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     private void Window_DragOver(object sender, DragEventArgs e) => e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
 
