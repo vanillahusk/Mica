@@ -47,14 +47,14 @@
         <Grid Grid.Column="2" x:Name="Workspace">
           <Grid.ColumnDefinitions><ColumnDefinition x:Name="EditorColumn" Width="0"/><ColumnDefinition x:Name="PreviewColumn"/></Grid.ColumnDefinitions>
           <TextBox x:Name="Editor" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Cascadia Mono, Consolas" FontSize="14" BorderThickness="0" Padding="36,30" TextChanged="Editor_TextChanged"/>
-          <Border x:Name="PreviewBorder" Grid.Column="1" Background="{StaticResource WindowBackground}"><FlowDocumentScrollViewer x:Name="Preview" IsToolBarVisible="False" VerticalScrollBarVisibility="Auto" Background="Transparent"/></Border>
+          <Border x:Name="PreviewBorder" Grid.Column="1" Background="#111216"><FlowDocumentScrollViewer x:Name="Preview" IsToolBarVisible="False" VerticalScrollBarVisibility="Auto" Background="Transparent" MaxWidth="880" HorizontalAlignment="Center"/></Border>
           <ScrollViewer x:Name="EmptyState" Grid.ColumnSpan="2" Background="{StaticResource WindowBackground}" VerticalScrollBarVisibility="Auto">
             <Grid Margin="64,48,64,52" MaxWidth="960">
               <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
               <StackPanel>
-                <Border HorizontalAlignment="Left" Background="#25223D" BorderBrush="#3A3562" BorderThickness="1" CornerRadius="12" Padding="11,5"><TextBlock Text="MICA · PRIVATE READING SPACE" Foreground="#ACA6FF" FontSize="10" FontWeight="SemiBold"/></Border>
-                <TextBlock Text="把对话，变成真正&#x0a;值得阅读的文档。" FontSize="39" FontWeight="SemiBold" LineHeight="49" Margin="0,20,0,13"/>
-                <TextBlock Text="同步 ChatGPT 长对话，或打开本地 Markdown。专注阅读、整理和保存，没有多余负担。" Foreground="{StaticResource MutedBrush}" FontSize="15" TextWrapping="Wrap" LineHeight="25" MaxWidth="680" HorizontalAlignment="Left"/>
+                <Border HorizontalAlignment="Left" Background="#25223D" BorderBrush="#3A3562" BorderThickness="1" CornerRadius="12" Padding="11,5"><TextBlock Text="MICA" Foreground="#ACA6FF" FontSize="10" FontWeight="SemiBold"/></Border>
+                <TextBlock Text="选择内容，开始阅读。" FontSize="32" FontWeight="SemiBold" LineHeight="42" Margin="0,20,0,11"/>
+                <TextBlock Text="打开本地 Markdown，或把 ChatGPT 对话同步到这里。阅读体验本身，是 Mica 最重要的界面。" Foreground="{StaticResource MutedBrush}" FontSize="15" TextWrapping="Wrap" LineHeight="25" MaxWidth="680" HorizontalAlignment="Left"/>
               </StackPanel>
               <Grid Grid.Row="1" Margin="0,38,0,0">
                 <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>

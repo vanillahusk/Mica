@@ -16,6 +16,13 @@
       <Setter Property="FontFamily" Value="Segoe UI" />
       <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
     </Style>
+    <Style TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+      <Setter Property="FontFamily" Value="Microsoft YaHei UI, Segoe UI" />
+    </Style>
+    <Style TargetType="Label">
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+    </Style>
     <Style TargetType="Button">
       <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
       <Setter Property="Background" Value="{StaticResource RaisedBackground}" />

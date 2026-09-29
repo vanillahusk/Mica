@@ -7,6 +7,6 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Mica</AssemblyName>
     <RootNamespace>LightSession.Desktop</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 </Project>

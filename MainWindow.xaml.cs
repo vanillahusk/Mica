@@ -103,6 +103,7 @@ public partial class MainWindow : Window
             }
             else
             {
+                builder.AppendLine("#### ChatGPT").AppendLine();
                 builder.AppendLine(message.Text).AppendLine();
             }
         }
