@@ -10,6 +10,31 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Build offline reader and run parser tests
+        working-directory: ReaderWeb
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm test
+          pnpm build
+      - name: Build and test browser extension
+        working-directory: BrowserExtension
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm test
+          pnpm build
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: Native/go.mod
+          cache-dependency-path: Native/go.sum
+      - name: Test native desktop reader
+        working-directory: Native
+        run: go test ./...
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x

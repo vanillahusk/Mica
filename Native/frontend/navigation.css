@@ -1,0 +1,36 @@
+.library-tree-root,.file-tree-children{min-width:0}
+.file-tree-folder{margin:1px 0}
+.file-tree-folder>summary{display:flex;align-items:center;gap:5px;height:30px;padding:0 8px;border-radius:7px;color:var(--muted)}
+.file-tree-folder>summary:hover{background:color-mix(in srgb,var(--panel) 58%,transparent);color:var(--text)}
+.tree-chevron{width:12px;font-size:11px;transition:transform .12s}
+.file-tree-folder:not([open])>.file-tree-children{display:none}
+.file-tree-folder:not([open])>summary .tree-chevron{transform:rotate(-90deg)}
+.tree-folder-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-tree-children{margin-left:12px;padding-left:8px;border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.file-tree-file .item{display:flex!important;align-items:center;gap:8px}
+.file-tree-file>.item:last-child{position:static;transform:none;opacity:1!important;background:transparent}
+.file-tree-file:hover>.item:last-child{background:color-mix(in srgb,var(--panel) 65%,transparent)}
+.file-tree-file .file-kind{margin-left:auto;color:var(--muted);font-size:9px;font-weight:600;letter-spacing:.04em;opacity:0;transition:opacity .12s}
+.file-tree-file .item:hover .file-kind,.file-tree-file .item:focus-visible .file-kind,.file-tree-file .item.active .file-kind{opacity:.8;color:inherit}
+#right{padding:14px 10px}
+.panel-search{height:34px;display:flex;align-items:center;gap:7px;margin:0 4px 10px;padding:0 9px;border-radius:8px;background:color-mix(in srgb,var(--panel) 65%,transparent);color:var(--muted)}
+.panel-search input{border:0;background:transparent;padding:0}.panel-search input:focus{border:0}
+.outline-branch{margin:1px 0}.outline-branch>summary{display:flex;align-items:center;min-width:0;border-radius:7px}
+.outline-branch>summary:hover{background:color-mix(in srgb,var(--panel) 55%,transparent)}
+.outline-chevron{flex:0 0 16px;text-align:center;color:var(--muted);font-size:11px;transition:transform .12s}
+.outline-branch:not([open])>summary .outline-chevron{transform:rotate(-90deg)}
+#outline .outline-item{display:flex;width:100%;min-width:0;align-items:center;text-align:left;border:0;margin:0;padding:7px 8px;border-radius:7px;line-height:1.45;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#outline .outline-branch>summary .outline-item{padding-left:0}
+#outline .outline-item:hover,#outline .outline-item.active{background:transparent;color:var(--text)}
+#outline .outline-item.active{font-weight:500}
+.outline-children{margin-left:8px;padding-left:13px;border-left:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+#outline .conversation-outline-item{gap:9px}.conversation-outline-item .outline-label{overflow:hidden;text-overflow:ellipsis}
+.conversation-outline-item.active{background:var(--panel)!important;color:var(--text)!important}
+.graph-dialog-v2,.graph-dialog-v2 .graph-canvas,.graph-dialog-v2 svg,.graph-dialog-v2 text{user-select:none;-webkit-user-select:none}
+.graph-dialog-v2 .graph-canvas svg{touch-action:none;cursor:grab}
+.graph-dialog-v2 .graph-canvas svg:active{cursor:grabbing}
+.graph-dialog-v2 .graph-edges line{vector-effect:non-scaling-stroke}
+.library-context-menu{position:fixed;z-index:1000;width:190px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:0 14px 40px #0008}
+.library-context-menu button{display:block;width:100%;padding:9px 10px;text-align:left;border-radius:6px}
+.library-context-menu button:hover{background:color-mix(in srgb,var(--bg) 55%,var(--panel))}
+.library-context-menu button.danger{color:#e19387}

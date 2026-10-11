@@ -1,0 +1,14 @@
+{
+  "name": "mica-browser-extension",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build-reader.mjs",
+    "test": "node test-background.mjs && node test.mjs && node test-popup.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "happy-dom": "20.0.8"
+  }
+}

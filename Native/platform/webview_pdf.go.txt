@@ -1,0 +1,80 @@
+package edge
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"golang.org/x/sys/windows"
+	"sync"
+	"sync/atomic"
+	"unsafe"
+)
+
+// Narrow PDF-only COM bridge. No debug port, browser process, or arbitrary CDP API.
+type micaPDFCallback struct {
+	vtbl *micaPDFVtbl
+	refs atomic.Int32
+	done func([]byte, error)
+}
+type micaPDFVtbl struct{ query, add, release, invoke ComProc }
+
+var micaPDFLive sync.Map
+var micaPDFIID = windows.GUID{Data1: 0x5c4889f0, Data2: 0x5ef6, Data3: 0x4c5a, Data4: [8]byte{0x95, 0x2c, 0xd8, 0xf1, 0xb9, 0x2d, 0x05, 0x74}}
+var micaUnknownIID = windows.GUID{Data4: [8]byte{0xc0, 0, 0, 0, 0, 0, 0, 0x46}}
+var micaPDFMethods = micaPDFVtbl{
+	NewComProc(func(p *micaPDFCallback, iid *windows.GUID, out *uintptr) uintptr {
+		if out == nil || iid == nil {
+			return 0x80004003
+		}
+		*out = 0
+		if *iid != micaPDFIID && *iid != micaUnknownIID {
+			return 0x80004002
+		}
+		*out = uintptr(unsafe.Pointer(p))
+		p.refs.Add(1)
+		return 0
+	}),
+	NewComProc(func(p *micaPDFCallback) uintptr { return uintptr(p.refs.Add(1)) }),
+	NewComProc(func(p *micaPDFCallback) uintptr {
+		n := p.refs.Add(-1)
+		if n == 0 {
+			micaPDFLive.Delete(p)
+		}
+		return uintptr(n)
+	}),
+	NewComProc(func(p *micaPDFCallback, hr uintptr, result *uint16) uintptr {
+		if int32(hr) < 0 {
+			p.done(nil, fmt.Errorf("WebView2 PDF HRESULT 0x%x", hr))
+			return 0
+		}
+		var response struct {
+			Data string `json:"data"`
+		}
+		err := json.Unmarshal([]byte(windows.UTF16PtrToString(result)), &response)
+		var data []byte
+		if err == nil {
+			data, err = base64.StdEncoding.DecodeString(response.Data)
+		}
+		p.done(data, err)
+		return 0
+	}),
+}
+
+func (e *Chromium) MicaPrintPDF(done func([]byte, error)) {
+	if e.webview == nil || e.shuttingDown {
+		done(nil, fmt.Errorf("WebView2 is unavailable"))
+		return
+	}
+	handler := &micaPDFCallback{vtbl: &micaPDFMethods, done: done}
+	handler.refs.Store(1)
+	micaPDFLive.Store(handler, handler)
+	method, _ := windows.UTF16PtrFromString("Page.printToPDF")
+	params, _ := windows.UTF16PtrFromString(`{"printBackground":true,"preferCSSPageSize":true,"displayHeaderFooter":false,"paperWidth":8.2677,"paperHeight":11.6929,"marginTop":0.6,"marginBottom":0.6,"marginLeft":0.6,"marginRight":0.6}`)
+	hr, _, _ := e.webview.vtbl.CallDevToolsProtocolMethod.Call(uintptr(unsafe.Pointer(e.webview)), uintptr(unsafe.Pointer(method)), uintptr(unsafe.Pointer(params)), uintptr(unsafe.Pointer(handler)))
+	if int32(hr) < 0 {
+		done(nil, fmt.Errorf("WebView2 PDF call failed: 0x%x", hr))
+	}
+	if handler.refs.Add(-1) == 0 {
+		micaPDFLive.Delete(handler)
+	}
+}

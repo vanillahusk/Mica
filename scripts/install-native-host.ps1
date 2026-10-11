@@ -2,9 +2,15 @@ param(
   [Parameter(Mandatory = $true)]
   [ValidatePattern('^[a-p]{32}$')]
   [string]$ExtensionId,
-  [string]$ExecutablePath = (Join-Path $PSScriptRoot '..\publish\Mica.exe')
+  [string]$ExecutablePath = ''
 )
 
+if ([string]::IsNullOrWhiteSpace($ExecutablePath)) {
+  $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Mica')
+  try { $installed = if ($key) { [string]$key.GetValue('InstallDirectory') } else { '' } }
+  finally { if ($key) { $key.Dispose() } }
+  $ExecutablePath = if ($installed) { Join-Path $installed 'app\Mica.exe' } else { Join-Path $PSScriptRoot '..\publish\Mica.exe' }
+}
 $resolvedExecutable = (Resolve-Path -LiteralPath $ExecutablePath -ErrorAction Stop).Path
 $hostDirectory = Join-Path $env:LOCALAPPDATA 'Mica\native-host'
 $manifestPath = Join-Path $hostDirectory 'com.mica.desktop.json'

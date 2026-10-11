@@ -16,8 +16,18 @@ internal static partial class NativeHostInstaller
     public static bool IsRegistered()
     {
         if (!File.Exists(ManifestPath)) return false;
-        using var key = Registry.CurrentUser.OpenSubKey($@"Software\Google\Chrome\NativeMessagingHosts\{HostName}");
-        return string.Equals(key?.GetValue(null) as string, ManifestPath, StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            using var manifest = JsonDocument.Parse(File.ReadAllText(ManifestPath));
+            // A portable upgrade may move the executable. Do not claim this version is connected
+            // when the browser still launches a different (possibly older) copy.
+            if (!manifest.RootElement.TryGetProperty("path", out var path) ||
+                !string.Equals(path.GetString(), DesktopInstallation.IntegrationExecutable, StringComparison.OrdinalIgnoreCase)) return false;
+            using var key = Registry.CurrentUser.OpenSubKey($@"Software\Google\Chrome\NativeMessagingHosts\{HostName}");
+            return string.Equals(key?.GetValue(null) as string, ManifestPath, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException)
+        { return false; }
     }
 
     public static IReadOnlyList<string> DiscoverExtensionIds()
@@ -53,7 +63,7 @@ internal static partial class NativeHostInstaller
         {
             name = HostName,
             description = "Mica desktop conversation sync host",
-            path = Environment.ProcessPath ?? throw new InvalidOperationException("无法确定 Mica 程序路径。"),
+            path = DesktopInstallation.IntegrationExecutable,
             type = "stdio",
             allowed_origins = new[] { $"chrome-extension://{extensionId}/" },
         };

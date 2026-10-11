@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Mica — an open book</title>
+  <path fill="#242321" d="M66 12 H190 C220 12 244 36 244 66 V190 C244 220 220 244 190 244 H66 C36 244 12 220 12 190 V66 C12 36 36 12 66 12 Z"/>
+  <path fill="#C9B38D" d="M58 67 C84 65 108 73 128 91 V188 C108 171 84 163 58 164 Z"/>
+  <path fill="#EEE4D2" d="M128 91 C148 73 172 65 198 67 V164 C172 163 148 171 128 188 Z"/>
+  <path fill="#B69D75" d="M174 69 L198 67 V91 Z"/>
+  <path fill="#242321" d="M125 89 L131 89 V185 L128 188 L125 185 Z"/>
+</svg>

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="reader.css"><link rel="stylesheet" href="katex.min.css">
+<title>Mica Reader</title></head>
+<body><div id="status" role="status">准备阅读…</div>
+<section id="find-bar" hidden aria-label="文内查找"><input id="find-input" type="search" maxlength="200" placeholder="查找本文内容"><output id="find-count">0 / 0</output><button data-find="prev">上一处</button><button data-find="next">下一处</button><button data-find="close">关闭</button></section>
+<main id="article"></main>
+<section id="live-workspace" hidden aria-label="编辑文档">
+  <div id="format-bar" role="toolbar" aria-label="文本格式">
+    <button data-format="heading" title="二级标题">H₂</button><button data-format="bold" title="粗体"><b>B</b></button><button data-format="italic" title="斜体"><i>I</i></button><button data-format="code" title="行内代码">&lt;/&gt;</button>
+    <span class="format-divider"></span><button data-format="list" title="无序列表">列表</button><button data-format="task" title="待办事项">待办</button><button data-format="quote" title="引用">引用</button><button data-format="link" title="链接">链接</button>
+    <span class="format-divider"></span><button data-format="undo" title="撤销">↶</button><button data-format="redo" title="重做">↷</button><span class="live-hint">直接在正文中编辑</span>
+  </div><div id="live-editor"></div>
+</section>
+<div id="scroll-rail" role="scrollbar" aria-label="文档滚动位置" aria-controls="article live-editor" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div id="scroll-thumb"></div></div>
+<div id="selection-tools" role="toolbar" aria-label="摘录操作" hidden><button data-note-action="highlight">高亮</button><button data-note-action="note">笔记</button><button data-note-action="tag">标签</button><button data-note-action="copy">复制</button></div>
+<dialog id="viewer"><header><span id="viewer-title">图表</span><div class="viewer-zoom"><button data-view="out" title="缩小">−</button><input id="zoom-slider" type="range" min="5" max="1200" value="100" aria-label="图表缩放比例"><output id="scale">100%</output><button data-view="in" title="放大">＋</button></div><button data-view="fit">适应窗口</button><button data-view="selection">解锁选择</button><button data-view="fullscreen">全屏</button><details id="viewer-more"><summary>更多</summary><div class="viewer-menu"><button data-view="width">适应宽度</button><button data-view="actual">实际大小</button><button data-view="copy-svg">复制 SVG</button><button data-view="export-svg">导出 SVG</button><button data-view="export-png">导出 PNG</button><button data-view="window">新窗口</button></div></details><button data-view="close">关闭</button></header><div id="stage" class="selection-locked"><div id="drawing"></div><aside id="minimap" hidden aria-label="图表位置"><div id="minimap-content"></div><div id="minimap-viewport"></div></aside></div><footer><span id="viewer-hint">已锁定文字选择 · 滚轮缩放 · 拖动平移</span></footer></dialog>
+<script type="module" src="reader.js"></script></body></html>

@@ -53,7 +53,7 @@ internal static class NativeMessagingHost
 
     private static void LaunchDesktop(string conversationId)
     {
-        var executable = Environment.ProcessPath;
+        var executable = DesktopInstallation.IntegrationExecutable;
         if (string.IsNullOrWhiteSpace(executable)) return;
         Process.Start(new ProcessStartInfo
         {

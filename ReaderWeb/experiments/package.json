@@ -1,0 +1,7 @@
+{
+  "name": "mica-renderer-experiments",
+  "private": true,
+  "type": "module",
+  "scripts": {"build": "node build.mjs", "bench": "node benchmark.mjs"},
+  "dependencies": {"@mermanjs/web-render": "0.8.0-alpha.7", "satteri": "0.10.5"}
+}

@@ -1,0 +1,5 @@
+package windows
+
+func (f *Frontend) MicaPrintPDF(done func([]byte, error)) {
+	f.mainWindow.Invoke(func() { f.chromium.MicaPrintPDF(done) })
+}

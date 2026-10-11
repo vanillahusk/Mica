@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Mica Sync",
+  "version": "0.2.1",
+  "description": "将 ChatGPT 对话按 Markdown 原样同步到本机 Mica。",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApgGluDMBQtVW+3PMplxpeHnUx3+wjoIsIvtiWo7wX/kAEA4iDCbmq2d1UJ8q0CkyfszMG+Qk8p0ofme9KS3GO+k0VDd9XIo6ZCRdHhAuhLPl9S1dTTUrfgOm4cPH4tOrGhVY5slbm+odmm9E3C8bH+3b1RlDMh4Y9TE17IPJ5YrsW6RQATb7YNtu6pqjfvqcMRhGIo+qk+ELRjkWxNxuXfZhDGAdncIDP0avGmiUnbEH2Kz7bsLO2Lvb/HZmnQjgX3HCmHHkqlCnrOqJSTCCiz9EEiXRUUa/Z8c+1e7h2xTtS4NrNnOWUvbdQEz6kLjYno/WgThChe+MWKyQeEl6rQIDAQAB",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["activeTab", "nativeMessaging", "tabs", "storage"],
+  "host_permissions": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "同步到 Mica",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+    "js": ["conversation-api.js", "page-bridge.js"],
+    "run_at": "document_start",
+    "world": "MAIN"
+  }, {
+    "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+    "js": ["markdown.js", "content.js"],
+    "css": ["content.css"],
+    "run_at": "document_idle"
+  }]
+}
