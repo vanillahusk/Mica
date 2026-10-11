@@ -86,16 +86,36 @@ func (a *App) grant(path string) (string, error) {
 	if e != nil {
 		return "", e
 	}
-	p, e = filepath.EvalSymlinks(p)
+	p = filepath.Clean(p)
+	real, e := filepath.EvalSymlinks(p)
 	if e != nil {
 		return "", e
 	}
 	a.mu.Lock()
-	a.allowed[p] = true
+	a.allowed[pathIdentity(real)] = true
 	a.mu.Unlock()
 	return p, nil
 }
-func (a *App) permitted(path string) bool { a.mu.Lock(); defer a.mu.Unlock(); return a.allowed[path] }
+
+// pathIdentity is used only for comparisons and permissions. Keep the absolute
+// path selected by the user in Document.Path: EvalSymlinks can expand Windows
+// 8.3 names, which otherwise changes a document's public identity between APIs.
+func pathIdentity(path string) string {
+	p, e := filepath.Abs(path)
+	if e != nil {
+		p = filepath.Clean(path)
+	}
+	if real, err := filepath.EvalSymlinks(p); err == nil {
+		p = real
+	}
+	return strings.ToLower(filepath.Clean(p))
+}
+
+func (a *App) permitted(path string) bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.allowed[pathIdentity(path)]
+}
 func (a *App) open(path string) (*Document, error) {
 	p, e := a.grant(path)
 	if e != nil {

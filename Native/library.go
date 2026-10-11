@@ -23,7 +23,7 @@ func (a *App) ChangeLibraryMany(paths []string, category string, remove bool) er
 	}
 	targets := make(map[string]bool, len(paths))
 	for _, path := range paths {
-		targets[path] = true
+		targets[pathIdentity(path)] = true
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -39,7 +39,7 @@ func (a *App) ChangeLibraryMany(paths []string, category string, remove bool) er
 	out := []Document{}
 	found := false
 	for _, d := range docs {
-		if targets[d.Path] {
+		if targets[pathIdentity(d.Path)] {
 			found = true
 			if remove {
 				continue

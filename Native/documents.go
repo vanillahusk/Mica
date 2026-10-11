@@ -76,8 +76,7 @@ func (a *App) Library() ([]Document, error) {
 		real, e := filepath.EvalSymlinks(d.Path)
 		d.Missing = e != nil
 		if e == nil {
-			d.Path = real
-			a.allowed[real] = true
+			a.allowed[pathIdentity(real)] = true
 		}
 	}
 	return docs, nil
@@ -91,16 +90,17 @@ func (a *App) remember(docs []Document) error {
 	_ = json.Unmarshal(b, &old)
 	categories := map[string]string{}
 	for _, d := range old {
-		categories[d.Path] = d.Category
+		categories[pathIdentity(d.Path)] = d.Category
 	}
 	seen := map[string]bool{}
 	out := []Document{}
 	for _, d := range append(docs, old...) {
-		if seen[d.Path] || documentKind(d.Path) == "" || len(out) >= 5000 {
+		key := pathIdentity(d.Path)
+		if seen[key] || documentKind(d.Path) == "" || len(out) >= 5000 {
 			continue
 		}
-		seen[d.Path] = true
-		out = append(out, Document{Path: d.Path, Title: d.Title, Kind: documentKind(d.Path), Category: categories[d.Path]})
+		seen[key] = true
+		out = append(out, Document{Path: d.Path, Title: d.Title, Kind: documentKind(d.Path), Category: categories[key]})
 	}
 	b, e := json.Marshal(out)
 	if e != nil {
