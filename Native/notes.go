@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	wr "github.com/wailsapp/wails/v2/pkg/runtime"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -115,4 +117,68 @@ func (a *App) SaveNote(p string, n Note) (Note, error) {
 		return atomicWrite(file, b)
 	})
 	return n, e
+}
+
+// DeleteNote is a recoverable delete. The JSON record is retained and its
+// revision still participates in conflict detection.
+func (a *App) DeleteNote(p string, n Note) (Note, error) {
+	n.Deleted = true
+	return a.SaveNote(p, n)
+}
+
+func (a *App) RestoreNote(p string, n Note) (Note, error) {
+	n.Deleted = false
+	return a.SaveNote(p, n)
+}
+
+func (a *App) ExportNotes(p, title string) (string, error) {
+	notes, err := a.Notes(p)
+	if err != nil {
+		return "", err
+	}
+	if len(notes) == 0 {
+		return "", errors.New("当前文档还没有可导出的笔记")
+	}
+	directory := ""
+	if !strings.HasPrefix(p, "conversation:") {
+		directory = filepath.Dir(p)
+	}
+	filename := strings.Map(func(r rune) rune {
+		if strings.ContainsRune(`<>:"/\\|?*`, r) {
+			return '-'
+		}
+		return r
+	}, title)
+	target, err := wr.SaveFileDialog(a.ctx, wr.SaveDialogOptions{Title: "导出阅读笔记", DefaultDirectory: directory, DefaultFilename: filename + " - 阅读笔记.md", Filters: []wr.FileFilter{{DisplayName: "Markdown", Pattern: "*.md"}}})
+	if err != nil || target == "" {
+		return "", err
+	}
+	if !strings.EqualFold(filepath.Ext(target), ".md") {
+		target += ".md"
+	}
+	var output strings.Builder
+	fmt.Fprintf(&output, "# %s · 阅读笔记\n\n", title)
+	for _, note := range notes {
+		kind := map[string]string{"highlight": "高亮", "tag": "标签", "note": "笔记"}[note.Kind]
+		fmt.Fprintf(&output, "## %s · %s\n\n", kind, note.Updated.Local().Format("2006-01-02 15:04"))
+		if note.Anchor.Quote != "" {
+			for _, line := range strings.Split(note.Anchor.Quote, "\n") {
+				fmt.Fprintf(&output, "> %s\n", line)
+			}
+			output.WriteString("\n")
+		}
+		if note.Text != "" {
+			output.WriteString(note.Text + "\n\n")
+		}
+		if len(note.Tags) > 0 {
+			for _, tag := range note.Tags {
+				fmt.Fprintf(&output, "#%s ", tag)
+			}
+			output.WriteString("\n\n")
+		}
+	}
+	if err = atomicWrite(target, []byte(output.String())); err != nil {
+		return "", err
+	}
+	return target, nil
 }

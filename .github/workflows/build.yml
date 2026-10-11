@@ -24,6 +24,7 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm test
+          pnpm run test:performance
           pnpm build
       - name: Build and test browser extension
         working-directory: BrowserExtension

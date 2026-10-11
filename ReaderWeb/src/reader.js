@@ -298,7 +298,7 @@ function moveFind(step){
   const range=findRanges[findIndex];CSS.highlights.delete('mica-find-current');CSS.highlights.set('mica-find-current',new Highlight(range));
   const el=range.startContainer.parentElement;el?.scrollIntoView({block:'center'});findCount.textContent=(findIndex+1)+' / '+findRanges.length;
 }
-function openFind(){findBar.hidden=false;findInput.focus();findInput.select();if(findInput.value)updateFind();}
+function openFind(query){findBar.hidden=false;if(typeof query==='string')findInput.value=query;findInput.focus();findInput.select();if(findInput.value){updateFind();if(findRanges.length)moveFind(1);}}
 function closeFind(){findBar.hidden=true;CSS.highlights?.delete('mica-find');CSS.highlights?.delete('mica-find-current');findRanges=[];findIndex=-1;}
 findInput.addEventListener('input',()=>{updateFind();if(findRanges.length)moveFind(1);});
 findBar.addEventListener('click',e=>{const action=e.target.closest('[data-find]')?.dataset.find;if(action==='next')moveFind(1);if(action==='prev')moveFind(-1);if(action==='close')closeFind();});
@@ -509,6 +509,7 @@ window.mica = {
     else if(data.type==='scroll') {window.scrollTo(0,data.offset);publishPosition();}
     else if(data.type==='zoom') {const anchor=liveEditor?null:readingAnchor(),generation=++anchorRestoreGeneration;document.documentElement.style.setProperty('--size',(16*data.value/100)+'px');liveEditor?.refreshLayout();if(anchor)requestAnimationFrame(()=>requestAnimationFrame(()=>{if(generation===anchorRestoreGeneration)restoreAnchor(anchor);}));}
     else if(data.type==='find') openFind();
+    else if(data.type==='find-query') openFind(data.query||'');
     else if(data.type==='theme') setTheme(data.id);
     else if(data.type==='diagram-engine') {
       const engine=data.isolated?'isolated':'compatible';if(engine===diagramEngine)return;

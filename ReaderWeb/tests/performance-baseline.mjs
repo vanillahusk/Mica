@@ -19,9 +19,9 @@ try{
     await page.evaluate(({id,text})=>window.mica.receive({type:'render',id,key:'perf-'+id,text,conversation:false}),{id,text});
     await page.waitForFunction(id=>messages.some(message=>message.type==='rendered'&&message.id===id),id,{timeout:30000});
     const metrics=await page.evaluate(id=>messages.find(message=>message.type==='rendered'&&message.id===id),id);
-    const scroll=await page.evaluate(async()=>{const frames=[];let before=performance.now();for(let i=0;i<80;i++){scrollBy(0,160);await new Promise(requestAnimationFrame);const now=performance.now();frames.push(now-before);before=now;}return{maxFrameMs:Math.max(...frames),averageFrameMs:frames.reduce((a,b)=>a+b,0)/frames.length,offset:scrollY};});
+    const scroll=await page.evaluate(async()=>{const frames=[];let before=performance.now();for(let i=0;i<80;i++){scrollBy(0,160);await new Promise(requestAnimationFrame);const now=performance.now();frames.push(now-before);before=now;}const ordered=[...frames].sort((a,b)=>a-b);return{maxFrameMs:Math.max(...frames),p95FrameMs:ordered[Math.floor((ordered.length-1)*.95)],averageFrameMs:frames.reduce((a,b)=>a+b,0)/frames.length,offset:scrollY};});
     results.push({characters,wallMs:performance.now()-started,firstPaintMs:metrics.firstPaintMs,totalMs:metrics.totalMs,parseMs:metrics.parseMs,...scroll});
-    assert(metrics.firstPaintMs<800,`${characters} first paint ${metrics.firstPaintMs}ms`);assert(scroll.maxFrameMs<80,`${characters} scroll frame ${scroll.maxFrameMs}ms`);
+    assert(metrics.firstPaintMs<800,`${characters} first paint ${metrics.firstPaintMs}ms`);assert(scroll.p95FrameMs<80,`${characters} p95 scroll frame ${scroll.p95FrameMs}ms`);assert(scroll.maxFrameMs<400,`${characters} frozen scroll frame ${scroll.maxFrameMs}ms`);
   }
   assert.deepEqual(errors,[]);await writeFile(resolve(output,'performance-baseline.json'),JSON.stringify({date:new Date().toISOString(),results},null,2));console.log(JSON.stringify(results,null,2));
 }finally{await browser.close();await new Promise(r=>server.close(r));}

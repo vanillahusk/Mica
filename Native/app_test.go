@@ -140,4 +140,39 @@ func TestNotesRevision(t *testing.T) {
 	if e != nil || len(notes) != 1 {
 		t.Fatal(notes, e)
 	}
+	deleted, e := a.DeleteNote(d.Path, saved)
+	if e != nil || !deleted.Deleted {
+		t.Fatal(deleted, e)
+	}
+	if notes, e = a.Notes(d.Path); e != nil || len(notes) != 0 {
+		t.Fatal(notes, e)
+	}
+	restored, e := a.RestoreNote(d.Path, deleted)
+	if e != nil || restored.Deleted {
+		t.Fatal(restored, e)
+	}
+}
+
+func TestSearchDocumentsAndConversationMessages(t *testing.T) {
+	t.Setenv("MICA_DATA_DIRECTORY", t.TempDir())
+	a := newApp()
+	path := filepath.Join(t.TempDir(), "architecture.md")
+	if err := os.WriteFile(path, []byte("# 架构\n统一调用计划由 Provider Driver 执行。"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.open(path); err != nil {
+		t.Fatal(err)
+	}
+	conversation := Conversation{ID: "search-conversation", Title: "图片生成", Messages: []Message{{ID: "one", Role: "assistant", Text: "Worker 保存 OSS / MySQL"}}}
+	if _, err := upsert(conversation); err != nil {
+		t.Fatal(err)
+	}
+	results, err := a.Search("Provider Driver")
+	if err != nil || len(results) != 1 || results[0].Kind != "document" || results[0].Snippet == "" {
+		t.Fatal(results, err)
+	}
+	results, err = a.Search("Worker 保存")
+	if err != nil || len(results) != 1 || results[0].Kind != "conversation" || results[0].Message != 1 {
+		t.Fatal(results, err)
+	}
 }

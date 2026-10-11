@@ -85,6 +85,51 @@ func listConversations() ([]Conversation, error) {
 	sort.Slice(out, func(i, j int) bool { return out[i].UpdatedAt.After(out[j].UpdatedAt) })
 	return out, nil
 }
+func (a *App) DeleteConversation(id string) error {
+	conversation, err := readConversation(id)
+	if err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(conversation, "", "  ")
+	if err != nil {
+		return err
+	}
+	target := filepath.Join(dataDir(), "conversations", "deleted", time.Now().UTC().Format("20060102T150405.000000000")+"-"+digest([]byte(id))+".json")
+	if err = atomicWrite(target, data); err != nil {
+		return err
+	}
+	return os.Remove(conversationPath(id))
+}
+func (a *App) RestoreLastConversation() (Conversation, error) {
+	files, err := filepath.Glob(filepath.Join(dataDir(), "conversations", "deleted", "*.json"))
+	if err != nil || len(files) == 0 {
+		if err == nil {
+			err = errors.New("没有可恢复的会话")
+		}
+		return Conversation{}, err
+	}
+	sort.Strings(files)
+	source := files[len(files)-1]
+	data, err := os.ReadFile(source)
+	if err != nil {
+		return Conversation{}, err
+	}
+	var conversation Conversation
+	if err = json.Unmarshal(data, &conversation); err != nil {
+		return Conversation{}, err
+	}
+	if _, err = os.Stat(conversationPath(conversation.ID)); err == nil {
+		return Conversation{}, errors.New("同一会话已经存在")
+	}
+	if err = atomicWrite(conversationPath(conversation.ID), data); err != nil {
+		return Conversation{}, err
+	}
+	if err = os.Remove(source); err != nil {
+		return Conversation{}, err
+	}
+	conversation.Messages = nil
+	return conversation, nil
+}
 func upsert(c Conversation) (Conversation, error) {
 	if len(c.ID) == 0 || len(c.ID) > 300 || len(c.Messages) > 100000 {
 		return c, errors.New("同步内容无效")
@@ -111,6 +156,16 @@ func upsert(c Conversation) (Conversation, error) {
 				}
 				if err = atomicWrite(conversationPath(c.ID)+".before-sync.bak", backup); err != nil {
 					return err
+				}
+				backupFolder := filepath.Join(dataDir(), "conversations", "backups", digest([]byte(c.ID)))
+				if err = atomicWrite(filepath.Join(backupFolder, time.Now().UTC().Format("20060102T150405.000000000")+".json"), backup); err != nil {
+					return err
+				}
+				if backups, globErr := filepath.Glob(filepath.Join(backupFolder, "*.json")); globErr == nil && len(backups) > 5 {
+					sort.Strings(backups)
+					for _, old := range backups[:len(backups)-5] {
+						_ = os.Remove(old)
+					}
 				}
 			}
 			previous.Messages = nil

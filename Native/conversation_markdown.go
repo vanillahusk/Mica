@@ -9,6 +9,8 @@ var (
 	bareDiagramStart = regexp.MustCompile(`(?i)^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram|journey|gantt|pie|mindmap|timeline|gitGraph)\b`)
 	flowDirection    = regexp.MustCompile(`(?i)^(flowchart|graph)\s+(TD|TB|BT|RL|LR)\s+`)
 	flowStatement    = regexp.MustCompile(`\s+([A-Za-z_][A-Za-z0-9_-]*)\s+(-->|---|-.->|==>)`)
+	stateHeader      = regexp.MustCompile(`(?i)^stateDiagram(?:-v2)?\s+`)
+	stateStatement   = regexp.MustCompile(`\s+(\[\*\]|[A-Za-z_][A-Za-z0-9_-]*)\s+(-->)`)
 	stepHeading      = regexp.MustCompile(`\s*(\*\*([0-9]+)[.)、]\s*[^*]+\*\*)\s*`)
 	extraBlankLines  = regexp.MustCompile(`\n{3,}`)
 )
@@ -51,6 +53,11 @@ func expandFlatFlowchart(text string) string {
 		head := strings.TrimSpace(text[:direction[1]])
 		rest := text[direction[1]:]
 		rest = flowStatement.ReplaceAllString(rest, "\n$1 $2")
+		return head + "\n" + strings.TrimSpace(rest)
+	}
+	if header := stateHeader.FindStringIndex(text); header != nil {
+		head := strings.TrimSpace(text[:header[1]])
+		rest := stateStatement.ReplaceAllString(text[header[1]:], "\n$1 $2")
 		return head + "\n" + strings.TrimSpace(rest)
 	}
 	return text

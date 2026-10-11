@@ -27,5 +27,8 @@
     "markdown-it-task-lists": "2.1.1",
     "mermaid": "12.0.0",
     "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "playwright": "1.55.1"
   }
 }

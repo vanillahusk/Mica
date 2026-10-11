@@ -1,4 +1,4 @@
-# Mica Desktop 0.9.14
+# Mica Desktop 0.10.0
 
 Mica 的 Go + Wails Windows 桌面端，不依赖 .NET Desktop Runtime。界面资源和离线渲染器嵌入 `Mica.exe`，运行时使用系统 WebView2。
 
