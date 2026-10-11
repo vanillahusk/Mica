@@ -97,12 +97,6 @@ jobs:
           name: Mica-${{ steps.versions.outputs.native }}-release
           path: release/*.zip
           if-no-files-found: error
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-      - name: Build legacy WPF compatibility reader (CI only)
-        run: dotnet build -c Release
-
   release:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: windows
