@@ -8,6 +8,9 @@ on:
 jobs:
   windows:
     runs-on: windows-latest
+    outputs:
+      native_version: ${{ steps.versions.outputs.native }}
+      extension_version: ${{ steps.versions.outputs.extension }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,11 +35,100 @@ jobs:
         with:
           go-version-file: Native/go.mod
           cache-dependency-path: Native/go.sum
+      - name: Prepare embedded native assets
+        working-directory: Native
+        run: node build.mjs
       - name: Test native desktop reader
         working-directory: Native
         run: go test ./...
+      - name: Build native desktop reader
+        working-directory: Native
+        run: |
+          node native-build.mjs
+          node notices.mjs
+      - name: Read package versions
+        id: versions
+        shell: pwsh
+        run: |
+          $manifest = Get-Content Native/app.manifest -Raw
+          if ($manifest -notmatch 'assemblyIdentity version="(\d+\.\d+\.\d+)\.\d+"') {
+            throw 'Cannot read the native version from Native/app.manifest'
+          }
+          $nativeVersion = $Matches[1]
+          $extensionVersion = (Get-Content BrowserExtension/manifest.json -Raw | ConvertFrom-Json).version
+          "native=$nativeVersion" >> $env:GITHUB_OUTPUT
+          "extension=$extensionVersion" >> $env:GITHUB_OUTPUT
+      - name: Package portable app and browser extension
+        shell: pwsh
+        run: |
+          $nativeVersion = '${{ steps.versions.outputs.native }}'
+          $extensionVersion = '${{ steps.versions.outputs.extension }}'
+          $releaseRoot = Join-Path $PWD 'release'
+          $nativeRoot = Join-Path $releaseRoot "Mica-$nativeVersion-win-x64"
+          $extensionRoot = Join-Path $releaseRoot "Mica-Sync-$extensionVersion-chrome"
+
+          New-Item -ItemType Directory -Force $nativeRoot, $extensionRoot | Out-Null
+          Copy-Item Native/Mica.exe, Native/README.md, Native/build/THIRD-PARTY-NOTICES.txt $nativeRoot
+
+          $extensionFiles = @(
+            'background.js',
+            'content.js',
+            'content.css',
+            'markdown.js',
+            'conversation-api.js',
+            'page-bridge.js',
+            'manifest.json',
+            'popup.html',
+            'popup.js',
+            'popup.css',
+            'README.md',
+            'THIRD-PARTY-NOTICES.txt'
+          )
+          foreach ($file in $extensionFiles) {
+            Copy-Item (Join-Path BrowserExtension $file) $extensionRoot
+          }
+          Copy-Item BrowserExtension/icons, BrowserExtension/reader $extensionRoot -Recurse
+
+          Compress-Archive -Path "$nativeRoot/*" -DestinationPath (Join-Path $releaseRoot "Mica-$nativeVersion-win-x64.zip") -Force
+          Compress-Archive -Path "$extensionRoot/*" -DestinationPath (Join-Path $releaseRoot "Mica-Sync-$extensionVersion-chrome.zip") -Force
+      - name: Upload install-free packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mica-${{ steps.versions.outputs.native }}-release
+          path: release/*.zip
+          if-no-files-found: error
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Build
+      - name: Build legacy WPF compatibility reader (CI only)
         run: dotnet build -c Release
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: Mica-${{ needs.windows.outputs.native_version }}-release
+          path: release-assets
+      - name: Create versioned GitHub release when missing
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NATIVE_VERSION: ${{ needs.windows.outputs.native_version }}
+          EXTENSION_VERSION: ${{ needs.windows.outputs.extension_version }}
+        run: |
+          tag="v${NATIVE_VERSION}"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists; keeping it unchanged."
+            exit 0
+          fi
+          gh release create "$tag" release-assets/*.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Mica ${NATIVE_VERSION}" \
+            --notes "Mica ${NATIVE_VERSION} 免安装 Windows x64 阅读器（不依赖 .NET Desktop Runtime），以及 Mica Sync ${EXTENSION_VERSION} 浏览器插件。解压后即可运行或加载插件。"

@@ -43,22 +43,27 @@
 
 设计参考和取舍见 [阅读笔记设计](docs/reading-notes-design.md)。
 
-## 构建
+## 下载
+
+在 [GitHub Releases](https://github.com/vanillahusk/Mica/releases) 下载 `Mica-*-win-x64.zip`。这是免安装的原生 Windows x64 版本，解压后直接运行 `Mica.exe`，不需要 .NET Desktop Runtime；系统仍需 WebView2。配套的 `Mica-Sync-*-chrome.zip` 是浏览器扩展，解压后通过浏览器的“加载已解压的扩展”使用。
+
+主分支的每次构建也会保留两个压缩包作为 Actions Artifact；版本号首次出现时，流水线会自动创建对应的 GitHub Release。
+
+## 构建原生发行版
 
 应用图标的可编辑源文件为 `Assets/mica.svg`。修改后运行 `./scripts/build-icon.ps1` 生成多尺寸 `mica.ico` 与预览 `mica.png`；ICO 嵌入程序文件和窗口资源，支持任务栏及 Windows 文件关联图标。
 
-开发需要 Windows 10/11、.NET 8 SDK、Node.js 24 和 pnpm。推荐发布包自带 .NET Desktop Runtime，用户无需另装 .NET。阅读器仍使用 Microsoft Edge WebView2 Runtime；未安装此系统组件的电脑需要补装 WebView2。渲染依赖随发布目录离线提供。
+官方发行版使用 Go + Wails 外壳，开发需要 Windows 10/11、Go 和 Node.js 24；运行用户不需要 Go、Node.js 或 .NET。阅读器使用系统 WebView2 Runtime，不携带 Chromium。
 
 ```powershell
-cd ReaderWeb
-pnpm install --frozen-lockfile
-pnpm test
-pnpm build
-cd ..
-dotnet publish -c Release -r win-x64 --self-contained true -o publish
+cd Native
+node build.mjs
+go mod download
+go test ./...
+node native-build.mjs
 ```
 
-请保留整个发布目录（包括 `ReaderAssets` 和 `runtimes`），不能只复制 `Mica.exe`。打开 `samples/阅读能力示例.md` 可体验公式与图表。构建后测试方式见 [桌面测试说明](tests/UiSmoke/README.md)，方案与研究来源见 [渲染优化记录](docs/reader-research.md)。
+原生资源已经嵌入 `Native/Mica.exe`，可以单文件运行。根目录的 WPF 工程只作为旧版兼容实现保留，不进入官方发行包。打开 `samples/阅读能力示例.md` 可体验公式与图表；方案与研究来源见 [渲染优化记录](docs/reader-research.md)。
 
 ## 从资源管理器打开
 
