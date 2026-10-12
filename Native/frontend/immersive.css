@@ -1,0 +1,37 @@
+/* Mica's shell is intentionally quiet: content provides the hierarchy. */
+:root{--bg:#211f1c;--sidebar:#1b1a18;--panel:#2b2823;--text:#d8d2c7;--heading:#f0ebe1;--muted:#969086;--line:#403b34;--accent:#cfb181}
+header{height:52px;padding-left:18px;gap:4px;background:color-mix(in srgb,var(--bg) 94%,var(--panel));border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+header .brand{font:italic 650 25px/1 Georgia,"Times New Roman",serif;letter-spacing:-.04em;margin:0 10px 0 0;color:var(--accent)}
+.icon-button{width:34px;height:34px;padding:0!important;display:grid;place-items:center;font-size:17px!important;color:var(--muted)}
+#open-menu>.icon-button{line-height:32px;text-align:center}
+header #title{padding:0 18px;margin:0;text-align:center;color:color-mix(in srgb,var(--text) 58%,var(--muted));font-size:12px;font-weight:450;letter-spacing:.01em}
+.header-actions{display:flex;align-items:center;gap:3px;--wails-draggable:no-drag}
+.header-actions .modes{margin:0 5px;padding:3px;border-radius:9px;background:color-mix(in srgb,var(--panel) 45%,transparent)}
+.header-actions .modes button{padding:5px 10px;font-size:12px}
+.header-actions .modes button[aria-pressed=true]{background:color-mix(in srgb,var(--panel) 88%,var(--bg));box-shadow:0 1px 8px #0002;color:var(--text)}
+#appearance summary,#more summary{height:34px;min-width:34px;display:grid;place-items:center;padding:0 8px!important;color:var(--muted)}
+.window-controls{margin-left:10px}.window-controls button{opacity:.68}.window-controls button:hover{opacity:1}
+#workspace{position:relative;background:var(--bg)}
+#library{width:284px;padding:22px 18px 20px;background:var(--sidebar);border:0;box-shadow:10px 0 32px #0000000c;scrollbar-width:none}
+#library::-webkit-scrollbar{display:none}.library-brand{display:none}
+#library .sidebar-search{width:100%;height:46px;margin:0 0 24px;padding:0 13px;border:0;border-radius:10px;background:color-mix(in srgb,var(--panel) 72%,var(--bg));color:var(--muted);text-align:left;display:flex;align-items:center;gap:10px}
+#library .sidebar-search:hover{background:var(--panel)}#library .sidebar-search span{font-size:20px;font-weight:300}#library .sidebar-search b{flex:1;font-size:12px;font-weight:450}#library .sidebar-search kbd{font:10px/1 "Segoe UI",sans-serif;color:var(--muted);opacity:.72}
+#library .sidebar-heading{height:auto;margin:0 0 10px;padding:0 2px;font-size:10px;font-weight:500;letter-spacing:.05em;color:color-mix(in srgb,var(--muted) 76%,transparent)}
+#library .shelf-heading{margin-top:27px;display:flex}#library .shelf-heading span{flex:1}#library .shelf-heading button{float:none;padding:0 5px;color:var(--muted)}
+.continue-card{position:relative;width:100%;min-height:116px;padding:18px;border:0!important;border-radius:11px!important;background:linear-gradient(135deg,color-mix(in srgb,var(--panel) 88%,var(--accent) 5%),var(--panel))!important;text-align:left;box-shadow:0 8px 26px #00000010;overflow:hidden}
+.continue-card:hover{transform:translateY(-1px);box-shadow:0 11px 30px #0002}.continue-card strong{display:block;margin-bottom:7px;color:var(--heading);font:600 15px/1.35 Georgia,"Noto Serif CJK SC","Songti SC","Microsoft YaHei UI",sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.continue-card span{font-size:11px;color:var(--muted)}.continue-card small{float:right;font-size:11px;color:var(--muted)}.continue-card i{position:absolute;left:18px;right:18px;bottom:17px;height:3px;border-radius:3px;background:color-mix(in srgb,var(--line) 72%,transparent)}.continue-card i::after{content:"";display:block;width:var(--reading-progress);height:100%;border-radius:inherit;background:var(--accent)}
+.library-tools.library-tools-v2{margin:0 0 8px;grid-template-columns:1fr auto}.library-tools .category-current{height:31px;padding:4px 8px;color:var(--muted);font-size:10px}.organize-button{height:31px;font-size:10px!important}
+#files .library-group{margin:1px 0 3px}#files .library-group:only-child>summary{display:flex}#files .library-group>summary{height:42px;margin:0;padding:0 8px;gap:10px;border-radius:8px;color:var(--text)}#files .library-group>summary:hover{background:color-mix(in srgb,var(--panel) 55%,transparent)}#files .library-group>summary .shelf-icon{width:17px;color:var(--accent);font-size:14px;font-style:normal;opacity:.78}#files .library-group>summary span{font-size:13px}#files .library-group>summary small{margin-left:auto;background:transparent;color:var(--muted);font-size:11px;font-weight:400}
+#files .library-tree-root{padding:2px 0 7px 18px}#files .library-row .item{padding-top:7px!important;padding-bottom:7px!important;color:var(--muted);font-size:12px}#files .library-row .item:hover{color:var(--text)}
+.conversation-shelf{margin:2px 0;border:0!important;padding:0!important;background:transparent!important}.conversation-shelf>summary{height:42px;display:flex;align-items:center;gap:10px;padding:0 8px;border-radius:8px;color:var(--text);font-weight:400}.conversation-shelf>summary:hover{background:color-mix(in srgb,var(--panel) 55%,transparent)}.conversation-shelf>summary .shelf-symbol{width:17px;color:var(--accent);font-size:18px}.conversation-shelf>summary b{flex:1;font-size:13px;font-weight:400}.conversation-shelf>summary small{color:var(--muted);font-size:11px}.conversation-shelf #conversations{padding:2px 0 8px 18px}.conversation-shelf #conversations .item{padding:7px 8px;color:var(--muted);font-size:12px}.conversation-shelf #conversations .item:hover{color:var(--text)}
+.recent-section{margin-top:28px;padding-top:18px;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent)}#recent-list .recent-item{position:relative;display:flex;width:100%;align-items:center;padding:8px!important;color:var(--muted);text-align:left;overflow:hidden}#recent-list .recent-item:hover{color:var(--text)}#recent-list .recent-item{white-space:nowrap;text-overflow:ellipsis}#recent-list .recent-item small{margin-left:auto;padding-left:8px;color:color-mix(in srgb,var(--muted) 65%,transparent);font-size:9px}
+#library .sync-entry{margin-top:18px;color:color-mix(in srgb,var(--muted) 78%,transparent);font-size:11px}.sync-dot{width:5px;height:5px;opacity:.72}
+main{background:var(--bg)}
+#right{position:absolute;z-index:30;right:12px;top:12px;bottom:12px;width:326px;padding:23px 18px;background:color-mix(in srgb,var(--sidebar) 96%,transparent);border:1px solid color-mix(in srgb,var(--line) 62%,transparent);border-radius:13px;box-shadow:0 18px 60px #0007;backdrop-filter:blur(20px);animation:mica-panel-in .18s ease-out}
+#right-close{position:absolute;right:12px;top:11px;width:30px;height:30px;padding:0;color:var(--muted);font-size:16px}
+@keyframes mica-panel-in{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+#right #outline-panel h3,#right #notes-panel h3{margin:1px 8px 18px;color:var(--text);font-size:12px;font-weight:550}
+#right .panel-search{background:color-mix(in srgb,var(--panel) 52%,transparent)}
+footer{background:var(--bg);opacity:.72}
+@media(max-width:1050px){#library{width:248px}.header-actions .icon-button{display:none}header #title{padding:0 6px}#right{width:300px}}
+@media(max-width:760px){#library{position:absolute;z-index:35;inset:0 auto 0 0;width:min(300px,88vw);box-shadow:20px 0 60px #0009}.brand{margin-right:2px!important}.header-actions .modes button{padding:5px 7px}.window-controls button{width:36px}#right{right:6px;top:6px;bottom:6px;width:calc(100% - 12px)}}

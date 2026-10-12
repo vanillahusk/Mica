@@ -11,7 +11,14 @@ const send=m=>frame.contentWindow.mica?.receive(m);
 const snapshot=()=>frame.contentWindow.mica?.editorSnapshot();
 let shelf=null;
 const oldShowLists=showLists;
-showLists=()=>{if(!shelf)return oldShowLists();const q=$('filter').value.toLocaleLowerCase();shelf.render(files,q);$('conversations').replaceChildren(...conversations.filter(c=>c.title.toLocaleLowerCase().includes(q)).map(c=>button(c.title,async()=>{if(await leave())await open(await api().Conversation(c.id))})))};
+async function openRecorded(item){if(!await leave())return;await open(item.path.startsWith('conversation:')?await api().Conversation(item.path.slice(13)):await api().OpenKnown(item.path))}
+function renderLibraryMeta(){
+ const recent=(prefs.recent||[]).filter(item=>item?.path&&item?.title),current=recent[0],card=$('continue-reading');
+ if(current){const position=prefs.positions?.[current.path]||{},progress=Number(position.progress);card.hidden=false;card.querySelector('strong').textContent=current.title;card.querySelector('span').textContent=current.conversation?'ChatGPT 对话':'本地文档';card.querySelector('small').textContent=Number.isFinite(progress)?Math.round(progress*100)+'%':position.page?'第 '+position.page+' 页':'继续';card.querySelector('i').style.setProperty('--reading-progress',Number.isFinite(progress)?Math.round(progress*100)+'%':'0%');card.onclick=call(()=>openRecorded(current))}else card.hidden=true;
+ $('recent-list').replaceChildren(...recent.slice(1,6).map(item=>{const row=button(item.title,()=>openRecorded(item),'recent-item');const kind=document.createElement('small');kind.textContent=item.conversation?'对话':'文档';row.append(kind);return row}));
+ $('conversation-count').textContent=String(conversations.length);
+}
+showLists=()=>{if(!shelf)return oldShowLists();const q=$('filter').value.toLocaleLowerCase();shelf.render(files,q);$('conversations').replaceChildren(...conversations.filter(c=>c.title.toLocaleLowerCase().includes(q)).map(c=>button(c.title,async()=>{if(await leave())await open(await api().Conversation(c.id))})));renderLibraryMeta()};
 import('./library-ui-v2.js').then(({createLibrary})=>{shelf=createLibrary({api,report,open:async d=>{if(await leave())await open(await api().OpenKnown(d.path))},changed:async()=>{files=await api().Library();showLists()},categories:()=>[...new Set([...(prefs.categories||[]),...files.map(f=>f.category).filter(Boolean)])],saveCategories:async names=>{prefs.categories=names;await persist()},removed:path=>{if(prefs.lastPath===path)delete prefs.lastPath;delete prefs.positions?.[path];persist()}});showLists()}).catch(report);
 function setDirty(value){dirty=value;api().Dirty(value);$('save').disabled=!value;$('title').textContent=(doc?.title||'打开文档')+(value?' · 未保存':'')}
 let preferenceWrites=Promise.resolve();
@@ -25,7 +32,7 @@ async function leave(){if(!dirty)return true;const answer=await confirmLeave();i
 async function save(){if(!doc)return false;const state=snapshot();if(state?.composing)throw Error('请先完成中文输入');const text=state?.text??doc.text;const saved=doc.conversation?await api().SaveAs(text):await api().Save(doc.path,text,doc.revision);if(!saved)return false;doc=saved;setDirty(false);return true}
 async function open(next){
  if(!next)return;await documentReady;documentFrame.contentWindow.documentReader?.position();if(editing){frame.contentWindow.mica.endEditing();editing=false}doc=next;setDirty(false);$('welcome').hidden=true;frame.hidden=!richDoc();documentFrame.hidden=richDoc();
- prefs.lastPath=doc.path;prefs.recent=[{path:doc.path,title:doc.title,conversation:!!doc.conversation,at:Date.now()},...(prefs.recent||[]).filter(item=>item.path!==doc.path)].slice(0,12);await persist();
+ prefs.lastPath=doc.path;prefs.recent=[{path:doc.path,title:doc.title,conversation:!!doc.conversation,at:Date.now()},...(prefs.recent||[]).filter(item=>item.path!==doc.path)].slice(0,12);await persist();renderLibraryMeta();
  if(!doc.conversation&&!files.some(f=>f.path===doc.path)){files.push({path:doc.path,title:doc.title});showLists()}
  $('read').setAttribute('aria-pressed','true');$('edit').setAttribute('aria-pressed','false');$('edit').disabled=doc.conversation||!richDoc();
  $('save-as').textContent=doc.conversation?'另存为可编辑副本':'另存为';$('delete-conversation').hidden=!doc.conversation;const state=$('source-state');state.hidden=!doc.conversation;state.classList.toggle('warning',!!doc.warnings?.length);state.textContent=doc.conversation?(doc.warnings?.length?'图表增强 '+doc.warnings.length+' · 原文未修改':'同步原件 · 只读 · '+(doc.messageCount||0)+' 条')+(doc.syncedAt?' · '+doc.syncedAt:''):'';
@@ -75,7 +82,7 @@ window.micaNative=async data=>{try{
  if(data.type==='ready'){ready=true;return boot()}
  if(data.id!=null&&data.id!==rev)return;
  if(data.type==='rendered'){$('outline-panel').querySelector('h3').textContent=doc?.conversation?'对话目录 · '+data.outline.length+' 轮':'文档目录';$('outline-filter').value='';window.MicaOutline.render($('outline'),data.outline,{conversation:!!doc?.conversation,navigate:id=>send({type:'navigate',id})});showNotes();$('notice').textContent=doc?.conversation?(doc.warnings?.length?'同步原件 · '+doc.warnings[0].summary:'同步原件 · 只读'):'本地阅读';if(pendingFind){send({type:'find-query',query:pendingFind});pendingFind=''}}
- if(data.type==='position'&&doc&&richDoc()){$('progress').textContent=Math.round(data.progress*100)+'%';prefs.positions??={};prefs.positions[doc.path]=data.anchor;const keys=Object.keys(prefs.positions);while(keys.length>200)delete prefs.positions[keys.shift()];persist();window.MicaOutline.setActive(data.active)}
+ if(data.type==='position'&&doc&&richDoc()){$('progress').textContent=Math.round(data.progress*100)+'%';prefs.positions??={};prefs.positions[doc.path]={...data.anchor,progress:data.progress};const keys=Object.keys(prefs.positions);while(keys.length>200)delete prefs.positions[keys.shift()];persist();renderLibraryMeta();window.MicaOutline.setActive(data.active)}
  if(data.type==='edit-change')setDirty(true);
  if(data.type==='copy')await api().Copy(data.text);
  if(data.type==='link')await api().Link(data.url);
@@ -95,10 +102,12 @@ $('open-files').onclick=$('welcome-open').onclick=call(chooseFile);$('folder').o
 $('read').onclick=call(()=>setMode(false));$('edit').onclick=call(()=>setMode(true));$('find').onclick=()=>send({type:'find'});$('theme').onchange=call(async()=>{prefs.theme=$('theme').value;await palette()});$('zoom').oninput=()=>{prefs.zoom=Number($('zoom').value);send({type:'zoom',value:prefs.zoom});persist()};$('filter').oninput=showLists;$('refresh').onclick=call(refresh);
 $('outline-filter').oninput=event=>window.MicaOutline.filter(event.target.value);
 $('library-toggle').onclick=()=>$('library').hidden=!$('library').hidden;
+$('library-close').onclick=()=>$('library').hidden=true;$('sidebar-global-search').onclick=call(openSearch);$('sidebar-add').onclick=call(chooseFile);
 function panel(name){$('right').hidden=false;$('outline-panel').hidden=name!=='outline';$('notes-panel').hidden=name!=='notes'}
 $('outline-toggle').onclick=()=>{if(!$('right').hidden&&!$('outline-panel').hidden)$('right').hidden=true;else panel('outline')};$('notes-toggle').onclick=()=>{if(!$('right').hidden&&!$('notes-panel').hidden)$('right').hidden=true;else panel('notes')};$('add-note').onclick=()=>{if(doc)editNote()};$('note-save').onclick=call(saveNote);$('note-delete').onclick=call(deleteNote);$('note-cancel').onclick=()=>$('note-dialog').close();$('note-text').oninput=$('note-tags').oninput=()=>api().Dirty(true);$('note-dialog').onclose=()=>api().Dirty(dirty);
+$('right-close').onclick=()=>$('right').hidden=true;
 $('global-search').onclick=call(openSearch);$('global-search-input').oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>call(runSearch)(),180)};
-document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();call(openSearch)()}if(event.key==='Escape'&&$('search-dialog').open)$('search-dialog').close()});
+document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();call(openSearch)()}if(event.key==='Escape'){if($('search-dialog').open)$('search-dialog').close();else $('right').hidden=true}});
 $('connect').onclick=$('sync-help').onclick=()=>$('connection').showModal();$('connection-cancel').onclick=()=>$('connection').close();$('connection-save').onclick=call(async()=>{await api().Connect($('extension-id').value);$('connection').close();$('notice').textContent='已连接：请在 ChatGPT 点击“同步到 Mica”'});
 $('delete-conversation').onclick=call(async()=>{if(!doc?.conversation||!confirm('删除当前同步会话？可以从“更多”中恢复最近删除的一条。'))return;await api().DeleteConversation(doc.path.slice(13));prefs.recent=(prefs.recent||[]).filter(item=>item.path!==doc.path);delete prefs.lastPath;await persist();await refresh();doc=null;$('welcome').hidden=false;frame.hidden=true;$('title').textContent='打开文档';$('source-state').hidden=true;$('delete-conversation').hidden=true;$('notice').textContent='会话已移到可恢复区'});
 $('restore-conversation').onclick=call(async()=>{const restored=await api().RestoreLastConversation();await refresh();$('notice').textContent='已恢复会话：'+restored.title});

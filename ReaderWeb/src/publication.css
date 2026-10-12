@@ -1,0 +1,25 @@
+/* Publication-style reading surface: restrained prose, wider technical matter. */
+:root{--bg:#211f1c;--panel:#2b2823;--text:#d8d2c7;--heading:#f0ebe1;--muted:#969086;--accent:#cfb181;--line:#403b34}
+body{font-family:"Segoe UI Variable Text","Noto Sans CJK SC","Microsoft YaHei UI",sans-serif;font-weight:400;letter-spacing:.002em;text-rendering:optimizeLegibility}
+#article,.cm-editor .cm-content{width:min(100% - 72px,720px);max-width:720px;padding-top:58px}
+#article{padding-bottom:150px}
+p{margin-bottom:1.12em}
+h1,h2,h3,h4,h5,h6{font-family:"Segoe UI Variable Display","Noto Serif CJK SC","Source Han Serif SC","Songti SC","Microsoft YaHei UI",sans-serif;letter-spacing:-.022em;text-wrap:balance}
+h1{font-size:2.18em;line-height:1.23;font-weight:690;margin:0 0 1.65em}
+h2{font-size:1.58em;line-height:1.32;font-weight:660;margin:2.55em 0 .95em;padding:0;border:0}
+h3{font-size:1.22em;font-weight:640;margin:2em 0 .75em}
+h2+h3{margin-top:1.3em}
+hr{width:42px;margin:3.2em auto;border-top-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+blockquote{margin:1.65em 0;padding:13px 0 13px 20px;border:0;border-left:2px solid color-mix(in srgb,var(--accent) 72%,transparent);border-radius:0;background:transparent;color:color-mix(in srgb,var(--text) 82%,var(--muted))}
+.question{margin:2.2em 0;padding:19px 22px;border-left:2px solid var(--accent);border-radius:0 8px 8px 0;background:color-mix(in srgb,var(--panel) 68%,transparent);box-shadow:none}
+.chat-step-title{margin-top:2.2em;padding-top:1.35em;border-top-color:color-mix(in srgb,var(--line) 42%,transparent)}
+.code-block,.diagram,.table-shell{width:min(calc(100vw - 72px),940px);margin-left:50%;transform:translateX(-50%)}
+.code-block,.diagram{border-color:color-mix(in srgb,var(--line) 68%,transparent);border-radius:9px;box-shadow:0 14px 42px #00000012}
+.block-toolbar{min-height:35px;background:color-mix(in srgb,var(--panel) 74%,var(--codeBg));opacity:.56}
+.diagram-canvas{height:340px;min-height:340px;padding:30px;background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--panel) 80%,var(--bg)),var(--bg) 72%)}
+.diagram-canvas svg{max-height:280px}
+.table-shell{border-color:color-mix(in srgb,var(--line) 68%,transparent);border-radius:8px}th{background:color-mix(in srgb,var(--panel) 78%,var(--bg))}th,td{padding:11px 15px;border-color:color-mix(in srgb,var(--line) 72%,transparent)}
+code{border-radius:4px;padding:2px 5px}.footnotes{margin-top:3em}
+.cm-editor .live-h1{font-size:2.08em;line-height:1.35;font-weight:690;padding-top:12px;padding-bottom:20px}.cm-editor .live-h2{font-size:1.55em;font-weight:660;padding-top:24px;padding-bottom:9px}.cm-editor .live-h3{font-size:1.2em;padding-top:16px}
+@media(max-width:820px){#article,.cm-editor .cm-content{width:calc(100% - 42px);padding-top:38px}.code-block,.diagram,.table-shell{width:calc(100vw - 28px)}h1{font-size:1.9em}.diagram-canvas{height:300px;min-height:300px;padding:18px}}
+@media print{#article{width:100%!important;padding-top:0!important}.code-block,.diagram,.table-shell{width:100%!important;margin-left:0!important;transform:none!important}}

@@ -16,7 +16,7 @@ for(const file of await readdir('dist/chunks',{withFileTypes:true})) {
   const path=resolve('dist/chunks',file.name),owner=path.replace(/\.LEGAL\.txt$/,'');
   if(!outputs.has(path)&&!outputs.has(owner))await unlink(path);
 }
-for (const name of ['index.html', 'reader.css', 'themes.json']) await cp('src/' + name, 'dist/' + name);
+for (const name of ['index.html', 'reader.css', 'publication.css', 'themes.json']) await cp('src/' + name, 'dist/' + name);
 await cp('node_modules/katex/dist/katex.min.css', 'dist/katex.min.css');
 await cp('node_modules/katex/dist/fonts', 'dist/fonts', { recursive: true });
 await cp('node_modules/@mermanjs/web-render','dist/merman',{recursive:true,dereference:true});
