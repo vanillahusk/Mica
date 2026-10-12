@@ -27,6 +27,7 @@ try{
  assert((await docFrame().locator('.textLayer span').count())>10,'selectable PDF text layer');
  await page.waitForTimeout(150);await page.reload();await page.waitForFunction(()=>document.querySelector('#title').textContent==='test.pdf');await docFrame().waitForFunction(()=>document.querySelector('#total').textContent==='14'&&document.querySelector('#page').value==='2');
  await docFrame().waitForFunction(()=>document.querySelectorAll('[data-page-number="2"] .textLayer span').length>10);
+ await docFrame().locator('body').press('Control+f');assert(await docFrame().locator('#doc-find-bar').isVisible());await docFrame().locator('[data-find="close"]').click();
  await mkdir('build/ui',{recursive:true});await page.screenshot({path:'build/ui/pdf-reading.png'});
  await page.locator('#files button').filter({hasText:'article.md'}).click();
  const reader=page.frames().find(f=>f.url().endsWith('/reader.html'));await reader.waitForSelector('h1');

@@ -39,6 +39,12 @@ jobs:
       - name: Prepare embedded native assets
         working-directory: Native
         run: node build.mjs
+      - name: Test first-run and document find UI
+        working-directory: Native
+        run: |
+          $env:MICA_PLAYWRIGHT_MODULE = '../ReaderWeb/node_modules/playwright/index.mjs'
+          node find-ui-test.mjs
+          node ui-test.mjs
       - name: Test native desktop reader
         working-directory: Native
         run: go test ./...

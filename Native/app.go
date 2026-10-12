@@ -30,6 +30,7 @@ type Document struct {
 	Category     string `json:"category,omitempty"`
 	SyncedAt     string `json:"syncedAt,omitempty"`
 	MessageCount int    `json:"messageCount,omitempty"`
+	Sample       bool     `json:"sample,omitempty"`
 	Warnings     []ContentWarning `json:"warnings,omitempty"`
 }
 type ContentWarning struct {

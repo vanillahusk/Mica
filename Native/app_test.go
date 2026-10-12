@@ -176,3 +176,18 @@ func TestSearchDocumentsAndConversationMessages(t *testing.T) {
 		t.Fatal(results, err)
 	}
 }
+
+func TestExampleConversationSupportsReaderFeatures(t *testing.T) {
+	t.Setenv("MICA_DATA_DIRECTORY", t.TempDir())
+	a := newApp()
+	doc, err := a.ExampleConversation()
+	if err != nil || !doc.Sample || !doc.Conversation || doc.MessageCount != 6 {
+		t.Fatal(doc, err)
+	}
+	if !strings.Contains(doc.Text, "```mermaid") || !strings.Contains(doc.Text, "```go") || !strings.Contains(doc.Text, "[!QUESTION]") {
+		t.Fatal("example does not exercise the reader")
+	}
+	if _, err = a.Notes(doc.Path); err != nil {
+		t.Fatal("example must support local notes", err)
+	}
+}

@@ -302,6 +302,10 @@ function openFind(query){findBar.hidden=false;if(typeof query==='string')findInp
 function closeFind(){findBar.hidden=true;CSS.highlights?.delete('mica-find');CSS.highlights?.delete('mica-find-current');findRanges=[];findIndex=-1;}
 findInput.addEventListener('input',()=>{updateFind();if(findRanges.length)moveFind(1);});
 findBar.addEventListener('click',e=>{const action=e.target.closest('[data-find]')?.dataset.find;if(action==='next')moveFind(1);if(action==='prev')moveFind(-1);if(action==='close')closeFind();});
+document.addEventListener('keydown',event=>{
+  if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='f'){event.preventDefault();event.stopPropagation();openFind();}
+  else if(event.key==='Escape'&&!findBar.hidden){event.preventDefault();closeFind();}
+},true);
 async function recolorViewer(item) {
   const appearance = appearanceRevision;
   try {

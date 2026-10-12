@@ -13,7 +13,7 @@ await page.addInitScript(()=>{
  window.actions=[];
  const document={path:'conversation:test',title:'调研判断与方案修正',conversation:true,text:'> [!QUESTION]\n> Mermaid 的成熟度和美观度怎么样？\n\n## 图表与阅读\n\n好的阅读体验需要清晰的层次、适当的留白，以及稳定的交互。\n\n'+('这是用于检查阅读排版的正文。\n\n'.repeat(12))+'\n> [!QUESTION]\n> D2 可以渲染 Markdown 吗？\n\nMarkdown 与绘图语言负责不同的事情。'};
  document.text+='\n\n'+('用于验证目录跳转和滚动高亮的正文。\n\n'.repeat(20));
- window.go={main:{App:{Preferences:async()=>'{"theme":"warm","zoom":110}',Conversations:async()=>[{id:'test',title:document.title}],Startup:async()=>['--open','test'],Conversation:async()=>document,Notes:async()=>[],Dirty:()=>{},Quit:async()=>actions.push('close')}}};
+ window.go={main:{App:{Preferences:async()=>location.search.includes('welcome')?'{"theme":"warm","zoom":110}':'{"theme":"warm","zoom":110}',Conversations:async()=>[{id:'test',title:document.title}],Startup:async()=>location.search.includes('welcome')?[]:['--open','test'],Conversation:async()=>document,ExampleConversation:async()=>({...document,sample:true}),Notes:async()=>[],Dirty:()=>{},Quit:async()=>actions.push('close')}}};
  window.runtime={EventsOn:()=>{},WindowMinimise:()=>actions.push('minimize'),WindowToggleMaximise:()=>actions.push('maximize')};
 });
 try{
@@ -23,6 +23,7 @@ try{
  await page.locator('#outline-toggle').click();
  await page.locator('#outline button').nth(1).click();
  await page.waitForFunction(()=>document.querySelector('#outline button:nth-child(2)').classList.contains('active'));
+ const reader=page.frames().find(frame=>frame.url().endsWith('/reader.html'));await reader.locator('body').press('Control+f');assert(await reader.locator('#find-bar').isVisible());await reader.locator('[data-find="close"]').click();
  await page.locator('#appearance summary').click();
  assert.equal(await page.locator('#zoom-value').textContent(),'110%');
  await mkdir('build/ui',{recursive:true});
@@ -37,5 +38,6 @@ try{
  await page.setViewportSize({width:760,height:520});
  assert(await page.locator('#close').isVisible());
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no header overflow at minimum window size');
- assert.deepEqual(errors,[]);console.log('PASS UI: numbered conversation navigation, appearance, four themes, window actions, 760px layout');
+ await page.goto('http://127.0.0.1:'+server.address().port+'/index.html?welcome=1');await page.waitForSelector('#welcome:not([hidden])');assert.equal(await page.locator('.welcome-paths article').count(),2);assert.match(await page.locator('#welcome h1').textContent(),/值得重读/);await page.screenshot({path:'build/ui/welcome.png'});await page.locator('#welcome-example').click();await page.waitForFunction(()=>document.querySelector('#title').textContent==='调研判断与方案修正');
+ assert.deepEqual(errors,[]);console.log('PASS UI: global find, numbered navigation, welcome paths, appearance, window actions and responsive layout');
 }finally{await browser.close();server.close()}

@@ -1,4 +1,4 @@
-const $=id=>document.getElementById(id),view=$('viewport');
+const $=id=>document.getElementById(id),view=$('viewport'),findBar=$('doc-find-bar'),findInput=$('doc-find-input');
 let doc,task,pdf,viewer,events,links,findController,generation=0,restoring=false,fit=true;
 const error=e=>{$('error').textContent=String(e?.message||e)};
 function position(){if(!doc||restoring)return;const page=pdf?viewer.currentPageNumber:1;parent.micaDocumentPosition?.(doc.path,{version:2,page,scale:viewer?.currentScale||1,fit,offset:pdf?view.scrollTop-viewer.getPageView(page-1).div.offsetTop:0,top:view.scrollTop,left:view.scrollLeft})}
@@ -23,5 +23,12 @@ async function open(next,anchor){const id=++generation;restoring=true;doc=next;v
 function navigate(n){if(pdf){viewer.currentPageNumber=Math.min(pdf.numPages,Math.max(1,Math.round(n)||1));viewer.scrollPageIntoView({pageNumber:viewer.currentPageNumber});update()}}
 $('prev').onclick=()=>navigate(viewer.currentPageNumber-1);$('next').onclick=()=>navigate(viewer.currentPageNumber+1);$('page').onchange=()=>navigate(Number($('page').value));
 $('smaller').onclick=()=>{fit=false;viewer.currentScale=Math.max(.25,viewer.currentScale/1.2)};$('larger').onclick=()=>{fit=false;viewer.currentScale=Math.min(4,viewer.currentScale*1.2)};$('fit').onclick=()=>{fit=true;viewer.currentScaleValue='page-width'};
+function runFind(direction=0){const query=findInput.value.trim();if(!query)return;if(pdf)events?.dispatch('find',{source:window,type:direction?'again':'',query,caseSensitive:false,entireWord:false,highlightAll:true,findPrevious:direction<0});else window.find(query,false,direction<0,true)}
+function openFind(query){findBar.hidden=false;if(typeof query==='string')findInput.value=query;findInput.focus();findInput.select();if(findInput.value)runFind()}
+function closeFind(){findBar.hidden=true;findInput.blur()}
+findInput.oninput=()=>runFind();findInput.onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();runFind(event.shiftKey?-1:1)}else if(event.key==='Escape'){event.preventDefault();closeFind()}};
+findBar.onclick=event=>{const action=event.target.closest('[data-find]')?.dataset.find;if(action==='prev')runFind(-1);else if(action==='next')runFind(1);else if(action==='close')closeFind()};
+document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='f'){event.preventDefault();openFind()}else if(event.key==='Escape'&&!findBar.hidden){event.preventDefault();closeFind()}},true);
 view.addEventListener('scroll',position,{passive:true});let timer;new ResizeObserver(()=>{clearTimeout(timer);timer=setTimeout(()=>{if(pdf&&fit)viewer.currentScaleValue='page-width'},200)}).observe(view);
-window.documentReader={open,position,find(query){if(pdf)events.dispatch('find',{source:window,type:'',query,caseSensitive:false,entireWord:false,highlightAll:true,findPrevious:false});else window.find(query,false,false,true)},close(){generation++;doc=null;pdf=null;viewer?.setDocument(null);links?.setDocument(null);return task?.destroy()},theme(theme,zoom){for(const[k,v]of Object.entries(theme.colors))document.documentElement.style.setProperty('--'+k,v);document.documentElement.style.colorScheme=theme.scheme;$('plain').style.fontSize=(15*zoom/100)+'px'}};
+window.micaOpenFind=openFind;
+window.documentReader={open,position,find:openFind,close(){generation++;doc=null;pdf=null;viewer?.setDocument(null);links?.setDocument(null);return task?.destroy()},theme(theme,zoom){for(const[k,v]of Object.entries(theme.colors))document.documentElement.style.setProperty('--'+k,v);document.documentElement.style.colorScheme=theme.scheme;$('plain').style.fontSize=(15*zoom/100)+'px'}};

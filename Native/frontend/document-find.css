@@ -1,0 +1,4 @@
+#doc-find-bar{position:fixed;z-index:20;right:24px;top:12px;display:flex;align-items:center;gap:4px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 9px 28px #0004}
+#doc-find-bar[hidden]{display:none}#doc-find-input{width:230px;padding:7px 9px;background:var(--bg)}#doc-find-bar button{min-width:31px;padding:7px}
+@media(max-width:600px){#doc-find-bar{right:8px;left:8px}#doc-find-input{width:auto;flex:1}}
+@media print{#doc-find-bar{display:none!important}}
