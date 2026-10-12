@@ -1,12 +1,12 @@
 (() => {
   if (globalThis.__micaContent) return;
   globalThis.__micaContent = true;
-  let panel, status, list, lastURL = '', records = [], readerTitle = '', pending, updateTimer, indexTimer;
+  let panel, status, list, lastURL = '', records = [], readerTitle = '', pending, updateTimer, indexTimer, rawTimer;
   const currentID = () => location.pathname.match(/\/c\/([^/?#]+)/)?.[1];
   const say = text => { if (status) status.textContent = text; };
   const loadRaw = () => {
     const id = currentID();
-    if (!id) return Promise.reject(Error('当前地址还不是已保存的对话，可选择同步可见内容'));
+    if (!id) return Promise.reject(Error('当前地址还不是已保存的对话，暂时无法读取完整内容'));
     if (pending?.id === id) return pending.promise;
     const requestId = crypto.randomUUID();
     const promise = new Promise((resolve, reject) => {
@@ -30,16 +30,16 @@
     return promise;
   };
   let syncing = false;
-  const sync = async (visible = false) => {
+  const sync = async () => {
     if (syncing) throw Error('正在同步，请稍候');
     syncing = true;
-    say(visible ? '正在同步可见消息…' : '正在读取完整原文…');
+    say('正在读取完整原文…');
     try {
-      const conversation = visible ? MicaMarkdown.collect(document) : await loadRaw();
+      const conversation = await loadRaw();
       const result = await chrome.runtime.sendMessage({ type: 'MICA_SYNC', conversation, open: true });
       if (!result?.ok) throw Error(result?.error || '桌面端没有确认同步');
-      say('已同步 ' + (result.messageCount ?? conversation.messages.length) + (visible ? ' 条可见消息' : ' 条原文消息') + (result.warning ? '；'+result.warning : ''));
-      return { ...result, partial: visible };
+      say('已同步 ' + (result.messageCount ?? conversation.messages.length) + ' 条完整消息' + (result.warning ? '；'+result.warning : ''));
+      return result;
     } catch (error) { say(error.message); throw error; }
     finally { syncing = false; }
   };
@@ -68,10 +68,11 @@
   };
   function renderOutline() {
     if (!list) return;
-    let entries = records.filter(r => r.role === 'user');
-    if (!entries.length) {
-      try { entries = MicaMarkdown.collect(document).messages.filter(r => r.role === 'user'); } catch {}
-    }
+    let visible = [];
+    try { visible = MicaMarkdown.collect(document).messages.filter(r => r.role === 'user'); } catch {}
+    const entries = [...records.filter(r => r.role === 'user')];
+    const known = new Set(entries.flatMap(r => [r.id, r.text.replace(/\s+/g,' ').trim()]));
+    for (const record of visible) if (!known.has(record.id) && !known.has(record.text.replace(/\s+/g,' ').trim())) entries.push(record);
     const signature = JSON.stringify(entries.map(r => [r.id,r.text]));
     if (list.dataset.signature === signature) return;
     list.dataset.signature = signature;
@@ -94,10 +95,21 @@
       chrome.runtime.sendMessage({type:'MICA_DISCOVER_HISTORY',items:items.map(i=>({...i,updatedAt:new Date().toISOString()}))}).catch(()=>{historySignature='';});
     }
   };
+  const scheduleRawRefresh = (delay = 900) => {
+    const id = currentID(); if (!id) return;
+    clearTimeout(rawTimer);
+    rawTimer = setTimeout(() => {
+      if (currentID() !== id) return;
+      const before = JSON.stringify(records.map(r => [r.id,r.text]));
+      loadRaw().then(() => {
+        if (!syncing && before !== JSON.stringify(records.map(r => [r.id,r.text]))) say('对话已实时更新');
+      }).catch(error => { if (!records.length && !syncing) say(error.message); });
+    }, delay);
+  };
   function refresh() {
     if (!panel?.isConnected) {
       panel = document.createElement('aside'); panel.id = 'mica-reader-sidebar';
-      panel.innerHTML = '<header><strong>Mica · 提问目录</strong><button type="button" aria-label="收起目录">−</button></header><div class="mica-actions"><button type="button" id="mica-sync-button">同步完整对话</button><button type="button" data-mica-visible>同步可见内容</button><button type="button" data-mica-index>加载完整目录</button></div><p role="status"></p><nav aria-label="当前对话提问目录"></nav>';
+      panel.innerHTML = '<header><strong>Mica · 提问目录</strong><button type="button" aria-label="收起目录">−</button></header><div class="mica-actions"><button type="button" id="mica-sync-button">同步完整对话</button><button type="button" data-mica-index>加载完整目录</button></div><p role="status"></p><nav aria-label="当前对话提问目录"></nav>';
       document.body.append(panel); status = panel.querySelector('p'); list = panel.querySelector('nav');
       const readerButton = document.createElement('button');
       readerButton.type = 'button'; readerButton.textContent = '在新页阅读'; readerButton.dataset.micaReader = '';
@@ -105,7 +117,6 @@
       panel.querySelector('.mica-actions').append(readerButton);
       panel.querySelector('header button').onclick = event => { panel.classList.toggle('collapsed'); event.target.textContent = panel.classList.contains('collapsed') ? '+' : '−'; };
       panel.querySelector('#mica-sync-button').onclick = () => { void sync().catch(()=>{}); };
-      panel.querySelector('[data-mica-visible]').onclick = () => { void sync(true).catch(()=>{}); };
       panel.querySelector('[data-mica-index]').onclick = () => { say('正在加载历史提问…'); loadRaw().then(()=>say('完整目录已加载')).catch(e=>say(e.message)); };
     }
     if (lastURL !== location.href) {
@@ -113,16 +124,16 @@
       clearTimeout(indexTimer);
       if (currentID()) indexTimer = setTimeout(() => {
         loadRaw().then(() => { if (!syncing) say('历史提问已加载，点击可定位'); }).catch(error => { if (!syncing) say(error.message); });
-      }, 800);
+      }, 250);
     }
-    renderOutline(); discover();
+    renderOutline(); discover(); scheduleRawRefresh();
   }
   chrome.runtime.onMessage.addListener((message,_sender,reply) => {
     if (message?.type === 'MICA_PAGE_STATE') {
       let count=0; try{count=MicaMarkdown.collect(document).messages.length;}catch{}
       const id=currentID(); reply({ok:!!id || count>0,id,title:document.title,messageCount:count,url:location.href,error:!id && !count?'请打开一个 ChatGPT 对话':undefined}); return;
     }
-    if (message?.type === 'MICA_TRIGGER_SYNC') { sync(message.visible===true).then(reply).catch(e=>reply({ok:false,error:e.message})); return true; }
+    if (message?.type === 'MICA_TRIGGER_SYNC') { sync().then(reply).catch(e=>reply({ok:false,error:e.message})); return true; }
   });
   refresh();
   new MutationObserver(changes => {
@@ -130,4 +141,7 @@
     clearTimeout(updateTimer); updateTimer=setTimeout(refresh,500);
   }).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('popstate',refresh);
+  window.addEventListener('hashchange',refresh);
+  window.navigation?.addEventListener('navigate',()=>setTimeout(refresh,0));
+  setInterval(()=>{if(location.href!==lastURL)refresh();},400);
 })();

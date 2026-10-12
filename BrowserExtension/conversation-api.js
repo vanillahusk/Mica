@@ -37,7 +37,7 @@
       if (!response.ok) throw Error(`读取原始会话失败（HTTP ${response.status}），请刷新 ChatGPT 后重试`);
       const page = await response.json();
       if (page.mapping && page.current_node) return { title: page.title || '', records: recordsOf(mappingMessages(page)) };
-      if (!Array.isArray(page.messages)) throw Error('原始会话接口格式不受支持，请使用“同步当前可见内容”');
+      if (!Array.isArray(page.messages)) throw Error('原始会话接口格式暂不受支持，请更新 Mica Sync');
       title ||= typeof page.title === 'string' ? page.title : '';
       records = [...recordsOf(page.messages), ...records];
       if (page.page_info?.has_previous_page !== true) { complete = true; break; }
