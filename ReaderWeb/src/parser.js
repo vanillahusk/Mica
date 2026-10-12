@@ -5,9 +5,11 @@ import deflist from 'markdown-it-deflist';
 import mark from 'markdown-it-mark';
 import sub from 'markdown-it-sub';
 import sup from 'markdown-it-sup';
+import {adaptGptRichText} from './gpt-richtext/index.js';
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: false })
   .use(footnote).use(tasks, { enabled: false }).use(deflist).use(mark).use(sub).use(sup);
+const Token = md.parse('token-constructor', {})[0].constructor;
 const esc = md.utils.escapeHtml;
 for (const tag of ['th_open', 'td_open']) md.renderer.rules[tag] = (tokens, i, options, env, self) => {
   const token = tokens[i], align = /text-align:(left|right|center)/.exec(token.attrGet('style') || '');
@@ -68,10 +70,27 @@ const originalQuote = md.renderer.rules.blockquote_open;
 md.renderer.rules.blockquote_open = (tokens, i, options, env, self) =>
   (originalQuote ? originalQuote(tokens, i, options, env, self) : self.renderToken(tokens, i, options)) +
   (tokens[i].meta?.label ? '<div class="callout-label">' + esc(tokens[i].meta.label) + '</div>' : '');
+md.renderer.rules.gpt_component_open = (tokens,i) => {
+  const token=tokens[i],name=token.meta.name.replace(/[^a-z0-9-]/g,'');
+  return '<section class="gpt-component gpt-'+esc(name)+(token.meta.kind==='unknown'?' gpt-unknown':'')+'" data-gpt-component="'+esc(name)+'">';
+};
+md.renderer.rules.gpt_component_close = () => '</section>';
 
-export function parseMarkdown(text, conversation = false) {
+function richTokens(text,env,conversation,mode) {
+  const adapted=conversation?adaptGptRichText(text,{mode}):{segments:[{type:'markdown',text}],detected:false,compatVersion:0};
+  const tokens=[];
+  for(const segment of adapted.segments){
+    if(segment.type==='markdown'){for(const token of md.parse(segment.text,env))tokens.push(token);continue}
+    const token=new Token(segment.type==='open'?'gpt_component_open':'gpt_component_close','section',segment.type==='open'?1:-1);
+    token.meta={name:segment.name,kind:segment.kind};tokens.push(token);
+  }
+  env.richText={detected:adapted.detected,compatVersion:adapted.compatVersion,degraded:!!adapted.degraded};
+  return tokens;
+}
+
+export function parseMarkdown(text, conversation = false, richMode = 'rich') {
   const env = { diagrams: [] };
-  const tokens = md.parse(text, env), outline = [], used = new Map();
+  const tokens = richTokens(text,env,conversation,richMode), outline = [], used = new Map();
   let turn = 0;
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
@@ -116,5 +135,15 @@ export function parseMarkdown(text, conversation = false) {
   }
   if (group.length) buffer += md.renderer.render(group, md.options, env);
   if (buffer) chunks.push(buffer);
-  return { chunks, outline, diagrams: env.diagrams };
+  return { chunks, outline, diagrams: env.diagrams, richText: env.richText };
+}
+
+export function parseConversationSource(messages=[]) {
+  const chunks=[],outline=[];let turn=0;
+  for(const message of messages.slice(0,100000)){
+    const role=message.role==='user'?'用户':'ChatGPT',id=message.role==='user'?'source-question-'+(++turn):'';
+    if(id)outline.push({title:String(message.text||'').replace(/\s+/g,' ').trim().slice(0,120)||'未命名问题',level:1,id,turn});
+    chunks.push('<section class="raw-message raw-'+(message.role==='user'?'user':'assistant')+'"'+(id?' id="'+id+'"':'')+'><div class="raw-message-role">'+role+'</div><pre>'+esc(String(message.text||''))+'</pre></section>');
+  }
+  return {chunks,outline,diagrams:[],richText:{detected:false,compatVersion:1,source:true}};
 }

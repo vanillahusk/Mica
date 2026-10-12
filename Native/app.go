@@ -457,6 +457,13 @@ func (a *App) flushPreferences() {
 }
 func (a *App) Connect(extension string) error         { return installNativeHost(extension) }
 func (a *App) Conversations() ([]Conversation, error) { return listConversations() }
+func (a *App) ConversationSource(id string) ([]Message, error) {
+	c, err := readConversation(id)
+	if err != nil {
+		return nil, err
+	}
+	return c.Messages, nil
+}
 func (a *App) Conversation(id string) (*Document, error) {
 	c, e := readConversation(id)
 	if e != nil {

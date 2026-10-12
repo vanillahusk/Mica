@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mica Sync",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "将 ChatGPT 对话按 Markdown 原样同步到本机 Mica。",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApgGluDMBQtVW+3PMplxpeHnUx3+wjoIsIvtiWo7wX/kAEA4iDCbmq2d1UJ8q0CkyfszMG+Qk8p0ofme9KS3GO+k0VDd9XIo6ZCRdHhAuhLPl9S1dTTUrfgOm4cPH4tOrGhVY5slbm+odmm9E3C8bH+3b1RlDMh4Y9TE17IPJ5YrsW6RQATb7YNtu6pqjfvqcMRhGIo+qk+ELRjkWxNxuXfZhDGAdncIDP0avGmiUnbEH2Kz7bsLO2Lvb/HZmnQjgX3HCmHHkqlCnrOqJSTCCiz9EEiXRUUa/Z8c+1e7h2xTtS4NrNnOWUvbdQEz6kLjYno/WgThChe+MWKyQeEl6rQIDAQAB",
   "icons": {

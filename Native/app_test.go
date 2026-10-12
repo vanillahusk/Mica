@@ -114,6 +114,10 @@ func TestRawConversationPreservesMarkdownAndReplacesDOMFallback(t *testing.T) {
 	if err != nil || !strings.Contains(doc.Text, raw) || strings.Contains(doc.Text, "broken flowchart") {
 		t.Fatal(doc, err)
 	}
+	source, err := newApp().ConversationSource(c.ID)
+	if err != nil || len(source) != 2 || source[1].Text != raw {
+		t.Fatal("source mode did not return exact stored messages", source, err)
+	}
 	c.Messages = nil
 	if _, err = upsert(c); err == nil {
 		t.Fatal("empty snapshot overwrote conversation")

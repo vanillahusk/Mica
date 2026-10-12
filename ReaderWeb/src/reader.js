@@ -110,7 +110,7 @@ function newWorker() {
     workerBusy = false;
     if (data.error) { status.textContent = '解析失败：' + data.error; send({ type:'error', id:currentId, error:data.error }); return; }
     if (message.text.length < 2_000_000) {
-      parsedCache.set(message.key, { text: message.text, conversation: message.conversation, result: data.result });
+      parsedCache.set(message.key, { text: message.text, conversation: message.conversation, richMode:message.richMode||'rich', result: data.result });
       while (parsedCache.size > 4) parsedCache.delete(parsedCache.keys().next().value);
     }
     void mount(data.result, data.parseMs, false);
@@ -164,7 +164,7 @@ async function mount(result, parseMs, cached) {
   annotations.mounted();
   updateFind();
   mountedId=id;
-  send({ type:'rendered', id, outline, parseMs, firstPaintMs, totalMs: performance.now()-request.started, mountMs:performance.now()-start, cached });
+  send({ type:'rendered', id, outline, richText:result.richText, parseMs, firstPaintMs, totalMs: performance.now()-request.started, mountMs:performance.now()-start, cached });
   publishPosition();
   scrollRail.refresh();
 }
@@ -506,8 +506,8 @@ window.mica = {
       if(workerBusy) newWorker(); // Cancel active parsing without restarting an idle, warm worker.
       workerBusy=false;
       const cached=parsedCache.get(data.key);
-      if(cached && cached.text===data.text && cached.conversation===data.conversation) void mount(cached.result,0,true);
-      else {workerBusy=true;worker.postMessage({id:data.id,text:data.text,conversation:data.conversation});}
+      if(cached && cached.text===data.text && cached.conversation===data.conversation&&cached.richMode===(data.richMode||'rich')) void mount(cached.result,0,true);
+      else {workerBusy=true;worker.postMessage({id:data.id,text:data.text,conversation:data.conversation,richMode:data.richMode||'rich',rawMessages:data.rawMessages});}
     } else if(data.type==='edit' && data.id===currentId) void beginEditing(data);
     else if(data.type==='navigate') navigate(data.id);
     else if(data.type==='scroll') {window.scrollTo(0,data.offset);publishPosition();}

@@ -24,9 +24,9 @@ await page.addInitScript(()=>{
 let id=0;
 const fence=String.fromCharCode(96).repeat(3);
 const code=(lang,text)=>fence+lang+'\n'+text+'\n'+fence;
-async function render(text,key='test'){
+async function render(text,key='test',conversation=false){
   const current=++id;
-  await page.evaluate(data=>window.mica.receive(data),{type:'render',id:current,key,text,conversation:false,offset:0});
+  await page.evaluate(data=>window.mica.receive(data),{type:'render',id:current,key,text,conversation,offset:0});
   await page.waitForFunction(id=>window.messages.some(m=>m.type==='rendered'&&m.id===id),current);
   return await page.evaluate(id=>window.messages.find(m=>m.type==='rendered'&&m.id===id),current);
 }
@@ -218,6 +218,14 @@ try {
     return {offset:scrollY,maxFrameMs:Math.max(...gaps),averageFrameMs:gaps.reduce((a,b)=>a+b)/gaps.length};
   });
   assert(scrolling.offset>0);
+  const rich='<box onclick="window.unsafe=true"><title level="2">部署摘要</title><text>状态 <bold>正常</bold>，[手册](https://example.com)。</text><divider /><row><col>香港</col><col>0.11</col></row><MysteryWidget>未知内容保留</MysteryWidget><Link href="javascript:window.unsafe=true">危险链接</Link><AsyncImage src="javascript:window.unsafe=true" alt="危险图片" /></box><svg onload="window.unsafe=true"><script>window.unsafe=true</script></svg><script>window.unsafe=true</script>';
+  const richMetrics=await render(rich,'gpt-rich',true);
+  assert.equal(richMetrics.richText.detected,true);assert.equal(richMetrics.richText.compatVersion,1);
+  assert.equal(await page.locator('.gpt-box').count(),1);assert.equal(await page.locator('.gpt-col').count(),2);
+  assert.match(await page.locator('.gpt-box').textContent(),/未知内容保留/);assert.equal(await page.locator('.gpt-box hr').count(),1);
+  assert.equal(await page.locator('#article script,[onclick],[onload],a[href^="javascript:"],img[src^="javascript:"]').count(),0);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'rich components do not create page overflow');
+  assert.equal(await page.evaluate(()=>window.unsafe),undefined);
   await render('# 第二份文档','other');
   const cached=await render(long,'long');
   assert(cached.cached);

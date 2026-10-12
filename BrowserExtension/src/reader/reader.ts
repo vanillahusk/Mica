@@ -1,5 +1,6 @@
 import browser from '../shared/browser-polyfill';
 import { highlightCode } from './syntax-highlight';
+import { adaptGptRichText } from '../../../ReaderWeb/src/gpt-richtext/index.js';
 import {
   isReaderSnapshot,
   readerPositionKey,
@@ -127,6 +128,7 @@ function isTableSeparator(line: string): boolean {
 }
 
 export function renderReaderMarkdown(text: string, target: HTMLElement): void {
+  text = adaptGptRichText(text, { mode: 'compact' }).markdown;
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
   let index = 0;
   while (index < lines.length) {

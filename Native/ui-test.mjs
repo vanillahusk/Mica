@@ -13,7 +13,7 @@ await page.addInitScript(()=>{
  window.actions=[];
  const document={path:'conversation:test',title:'调研判断与方案修正',conversation:true,text:'> [!QUESTION]\n> Mermaid 的成熟度和美观度怎么样？\n\n## 图表与阅读\n\n好的阅读体验需要清晰的层次、适当的留白，以及稳定的交互。\n\n'+('这是用于检查阅读排版的正文。\n\n'.repeat(12))+'\n> [!QUESTION]\n> D2 可以渲染 Markdown 吗？\n\nMarkdown 与绘图语言负责不同的事情。'};
  document.text+='\n\n'+('用于验证目录跳转和滚动高亮的正文。\n\n'.repeat(20));
- window.go={main:{App:{Preferences:async()=>location.search.includes('welcome')?'{"theme":"warm","zoom":110}':'{"theme":"warm","zoom":110}',Conversations:async()=>[{id:'test',title:document.title}],Startup:async()=>location.search.includes('welcome')?[]:['--open','test'],Conversation:async()=>document,ExampleConversation:async()=>({...document,sample:true}),Notes:async()=>[],Dirty:()=>{},Quit:async()=>actions.push('close')}}};
+ window.go={main:{App:{Preferences:async()=>location.search.includes('welcome')?'{"theme":"warm","zoom":110}':'{"theme":"warm","zoom":110}',Conversations:async()=>[{id:'test',title:document.title}],Startup:async()=>location.search.includes('welcome')?[]:['--open','test'],Conversation:async()=>document,ConversationSource:async()=>[{id:'q',role:'user',text:'<box>原始提问</box>'},{id:'a',role:'assistant',text:'**原始回答**'}],ExampleConversation:async()=>({...document,sample:true}),Notes:async()=>[],Dirty:()=>{},Quit:async()=>actions.push('close')}}};
  window.runtime={EventsOn:()=>{},WindowMinimise:()=>actions.push('minimize'),WindowToggleMaximise:()=>actions.push('maximize')};
 });
 try{
@@ -26,6 +26,7 @@ try{
  const reader=page.frames().find(frame=>frame.url().endsWith('/reader.html'));await reader.locator('body').press('Control+f');assert(await reader.locator('#find-bar').isVisible());await reader.locator('[data-find="close"]').click();
  await page.locator('#appearance summary').click();
  assert.equal(await page.locator('#zoom-value').textContent(),'110%');
+ assert(await page.locator('#gpt-mode-field').isVisible());await page.locator('#gpt-mode-field select').selectOption('source');await reader.waitForSelector('.raw-message');assert.match(await reader.locator('.raw-message').first().textContent(),/<box>原始提问<\/box>/);await page.locator('#gpt-mode-field select').selectOption('rich');await reader.waitForSelector('.question');
  await mkdir('build/ui',{recursive:true});
  for(const theme of ['warm','paper','sepia','midnight']){
   await page.locator('#theme').selectOption(theme);await page.waitForTimeout(150);
