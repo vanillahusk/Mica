@@ -30,6 +30,7 @@ type Document struct {
 	Category     string `json:"category,omitempty"`
 	SyncedAt     string `json:"syncedAt,omitempty"`
 	MessageCount int    `json:"messageCount,omitempty"`
+	Messages     []Message `json:"messages,omitempty"`
 	Sample       bool     `json:"sample,omitempty"`
 	Warnings     []ContentWarning `json:"warnings,omitempty"`
 }
@@ -470,28 +471,32 @@ func (a *App) Conversation(id string) (*Document, error) {
 		return nil, e
 	}
 	var b strings.Builder
+	renderMessages := make([]Message, 0, len(c.Messages))
 	warnings := []ContentWarning{}
 	for index, m := range c.Messages {
-		if m.Role == "user" {
-			b.WriteString("> [!QUESTION]\n")
-			for _, line := range strings.Split(m.Text, "\n") {
-				fmt.Fprintf(&b, "> %s\n", line)
-			}
-			b.WriteString("\n")
-		} else if m.Role == "assistant" {
 		text := m.Text
-		if m.Format != "markdown" {
+		if m.Role == "assistant" && m.Format != "markdown" {
 			normalized := normalizeConversationMarkdown(text)
 			if normalized != strings.TrimSpace(strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")) && strings.Contains(normalized, "```mermaid") {
 				warnings = append(warnings, ContentWarning{Kind: "mermaid", Message: index + 1, Summary: "疑似 Mermaid 已增强显示，保存的同步原文未修改"})
 			}
 			text = normalized
 		}
+		renderMessage := m
+		renderMessage.Text = text
+		renderMessages = append(renderMessages, renderMessage)
+		if m.Role == "user" {
+			b.WriteString("> [!QUESTION]\n")
+			for _, line := range strings.Split(text, "\n") {
+				fmt.Fprintf(&b, "> %s\n", line)
+			}
+			b.WriteString("\n")
+		} else if m.Role == "assistant" {
 			b.WriteString(text + "\n\n")
 		}
 	}
 	a.mu.Lock()
 	a.current = ""
 	a.mu.Unlock()
-	return &Document{Path: "conversation:" + id, Title: c.Title, Text: b.String(), Conversation: true, SyncedAt: c.UpdatedAt.Local().Format("2006-01-02 15:04"), MessageCount: len(c.Messages), Warnings: warnings}, nil
+	return &Document{Path: "conversation:" + id, Title: c.Title, Text: b.String(), Conversation: true, SyncedAt: c.UpdatedAt.Local().Format("2006-01-02 15:04"), MessageCount: len(c.Messages), Messages: renderMessages, Warnings: warnings}, nil
 }

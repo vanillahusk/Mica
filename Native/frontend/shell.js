@@ -42,7 +42,7 @@ async function open(next){
  const renderId=++rev;await renderCurrent(renderId,prefs.positions?.[doc.path]);
  const loaded=await api().Notes(doc.path);if(rev===renderId){notes=loaded;showNotes()}
 }
-async function renderCurrent(renderId=++rev,anchor=prefs.positions?.[doc?.path]){if(!doc||!richDoc())return;const richMode=doc.conversation?(prefs.gptMode||'rich'):'rich',rawMessages=doc.conversation&&richMode==='source'?await api().ConversationSource(doc.path.slice(13)):undefined;send({type:'render',id:renderId,key:doc.path,text:doc.text,conversation:doc.conversation,richMode,rawMessages,imageBase:doc.conversation?null:new URL('/local-image/',location.href).href,anchor,offset:0})}
+async function renderCurrent(renderId=++rev,anchor=prefs.positions?.[doc?.path]){if(!doc||!richDoc())return;const richMode=doc.conversation?(prefs.gptMode||'rich'):'rich',rawMessages=doc.conversation&&richMode==='source'?await api().ConversationSource(doc.path.slice(13)):undefined;send({type:'render',id:renderId,key:doc.path,text:doc.text,conversation:doc.conversation,richMode,messages:doc.conversation?doc.messages:undefined,rawMessages,imageBase:doc.conversation?null:new URL('/local-image/',location.href).href,anchor,offset:0})}
 async function addDocuments(added,openFirst=false){if(!added?.length)return;files=await api().Library();showLists();$('library').hidden=false;if(openFirst&&await leave())await open(await api().OpenKnown(added[0].path));$('notice').textContent='已添加 '+added.length+' 个文档'}
 async function chooseFile(){await addDocuments(await api().OpenFiles(),true)}
 async function chooseFolder(){await addDocuments(await api().OpenFolder(),false)}

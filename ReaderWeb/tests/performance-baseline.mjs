@@ -23,8 +23,8 @@ try{
     results.push({characters,wallMs:performance.now()-started,firstPaintMs:metrics.firstPaintMs,totalMs:metrics.totalMs,parseMs:metrics.parseMs,...scroll});
     assert(metrics.firstPaintMs<800,`${characters} first paint ${metrics.firstPaintMs}ms`);assert(scroll.p95FrameMs<80,`${characters} p95 scroll frame ${scroll.p95FrameMs}ms`);assert(scroll.maxFrameMs<400,`${characters} frozen scroll frame ${scroll.maxFrameMs}ms`);
   }
-  const rich=Array.from({length:500},(_,index)=>`<card><title level="3">卡片 ${index+1}</title><text>正文 **加粗** 与 [链接](https://example.com/${index}).</text><row><col>左列</col><col>右列</col></row></card>`).join('\n');id++;
-  await page.evaluate(({id,text})=>window.mica.receive({type:'render',id,key:'perf-rich',text,conversation:true}),{id,text:rich});
+  const richMessages=Array.from({length:500},(_,index)=>({id:'perf-'+index,role:'assistant',text:`<card><title level="3">卡片 ${index+1}</title><text>正文 **加粗** 与 [链接](https://example.com/${index}).</text><row><col>左列</col><col>右列</col></row></card>`})),rich=richMessages.map(message=>message.text).join('\n');id++;
+  await page.evaluate(({id,text,messages})=>window.mica.receive({type:'render',id,key:'perf-rich',text,conversation:true,messages}),{id,text:rich,messages:richMessages});
   await page.waitForFunction(id=>window.messages.some(message=>(message.type==='rendered'||message.type==='error')&&message.id===id),id,{timeout:60000});
   const richMetrics=await page.evaluate(id=>window.messages.find(message=>(message.type==='rendered'||message.type==='error')&&message.id===id),id);assert.equal(richMetrics.type,'rendered',richMetrics.error);results.push({kind:'gpt-rich',characters:rich.length,firstPaintMs:richMetrics.firstPaintMs,totalMs:richMetrics.totalMs,parseMs:richMetrics.parseMs});
   assert(richMetrics.richText.detected);assert(richMetrics.parseMs<1000,`rich parse ${richMetrics.parseMs}ms`);assert(richMetrics.firstPaintMs<1500,`rich first paint ${richMetrics.firstPaintMs}ms`);

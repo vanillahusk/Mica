@@ -13,6 +13,7 @@ hr{width:42px;margin:3.2em auto;border-top-color:color-mix(in srgb,var(--accent)
 blockquote{margin:1.65em 0;padding:13px 0 13px 20px;border:0;border-left:2px solid color-mix(in srgb,var(--accent) 72%,transparent);border-radius:0;background:transparent;color:color-mix(in srgb,var(--text) 82%,var(--muted))}
 .question{margin:2.2em 0;padding:19px 22px;border-left:2px solid var(--accent);border-radius:0 8px 8px 0;background:color-mix(in srgb,var(--panel) 68%,transparent);box-shadow:none}
 .chat-step-title{margin-top:2.2em;padding-top:1.35em;border-top-color:color-mix(in srgb,var(--line) 42%,transparent)}
+.conversation-message{display:flow-root;min-width:0;max-width:100%;isolation:isolate}
 .gpt-component{min-width:0;max-width:100%;overflow-wrap:anywhere}
   .gpt-box{margin:1.1em 0}
   .gpt-box-decorated,.gpt-card,.gpt-appblock,.gpt-chart,.gpt-mapwidgetv2{margin:1.35em 0;padding:18px 20px;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:10px;background:color-mix(in srgb,var(--panel) 60%,transparent)}

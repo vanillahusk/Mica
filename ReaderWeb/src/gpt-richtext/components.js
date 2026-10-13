@@ -1,4 +1,4 @@
-export const COMPAT_VERSION = 2;
+export const COMPAT_VERSION = 3;
 
 export const STRUCTURAL_COMPONENTS = new Set([
   'box','row','col','card','grid','grid-item','flow','flow-item','table','table-row','table-cell',
@@ -26,7 +26,9 @@ export function componentKind(name) {
 
 export function isComponentName(name) {
   const key=name.toLowerCase();
-  return KNOWN_COMPONENTS.has(key) || !HTML_TAGS.has(key);
+  if(KNOWN_COMPONENTS.has(key))return true;
+  if(HTML_TAGS.has(key))return false;
+  return /^(?:[A-Z][A-Za-z0-9]{2,}|(?:gpt|openai)-[a-z0-9-]+)$/.test(name);
 }
 
 export function safeURL(value='') {

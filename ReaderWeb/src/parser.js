@@ -54,7 +54,7 @@ md.renderer.rules.mica_math_block = (tokens, i) => '<div class="math math-block"
 md.renderer.rules.fence = (tokens, i, options, env) => {
   const token = tokens[i], lang = token.info.trim().split(/\s+/)[0].toLowerCase();
   if (lang === 'mermaid') {
-    const id = 'diagram-' + env.diagrams.length;
+    const id = 'diagram-' + (env.scope ? env.scope + '-' : '') + env.diagrams.length;
     env.diagrams.push({ id, source: token.content });
     return '<figure class="diagram selection-locked" data-source-line="' + (token.map[0]+1) + '" data-diagram="' + id + '"><div class="block-toolbar"><span>MERMAID</span><button data-action="diagram-selection">解锁选择</button><button data-action="diagram-open">查看图表</button><button data-action="diagram-full">全屏</button><button data-action="diagram-window">新窗口</button><button data-action="diagram-source">源码</button></div><div class="diagram-canvas">图表即将加载…</div></figure>';
   }
@@ -100,10 +100,10 @@ function richTokens(text,env,conversation,mode) {
   return tokens;
 }
 
-export function parseMarkdown(text, conversation = false, richMode = 'rich') {
-  const env = { diagrams: [] };
+export function parseMarkdown(text, conversation = false, richMode = 'rich', options = {}) {
+  const env = { diagrams: [], scope:options.scope||'' };
   const tokens = richTokens(text,env,conversation,richMode), outline = [], used = new Map();
-  let turn = 0;
+  let turn = options.questionStart||0;
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     if(t.map && t.nesting===1) t.attrSet('data-source-line',String(t.map[0]+1));
@@ -117,7 +117,7 @@ export function parseMarkdown(text, conversation = false, richMode = 'rich') {
       const count = used.get(slug) || 0; used.set(slug, count + 1);
       const id = slug + (count ? '-' + count : '');
       t.attrSet('id', id);
-      if (!conversation) outline.push({ title, level: Number(t.tag.slice(1)), id, turn: 0 });
+      if (!conversation&&!options.suppressHeadings) outline.push({ title, level: Number(t.tag.slice(1)), id, turn: 0 });
     }
     if (t.type === 'blockquote_open' && tokens[i + 2]?.type === 'inline') {
       const inline = tokens[i + 2];
@@ -148,6 +148,20 @@ export function parseMarkdown(text, conversation = false, richMode = 'rich') {
   if (group.length) buffer += md.renderer.render(group, md.options, env);
   if (buffer) chunks.push(buffer);
   return { chunks, outline, diagrams: env.diagrams, richText: env.richText };
+}
+
+export function parseConversationMessages(messages=[],richMode='rich') {
+  const chunks=[],outline=[],diagrams=[];let turn=0,detected=false,degraded=false,compatVersion=0;
+  for(const [index,message] of messages.slice(0,100000).entries()){
+    const role=message?.role==='user'?'user':'assistant',text=String(message?.text||''),scope='m'+index;
+    const source=role==='user'?'> [!QUESTION]\n'+text.split(/\r?\n/).map(line=>'> '+line).join('\n'):text;
+    const parsed=parseMarkdown(source,role!=='user',richMode,{scope,questionStart:turn,suppressHeadings:true});
+    if(role==='user'&&parsed.outline.length){turn=parsed.outline.at(-1).turn;outline.push(...parsed.outline)}
+    diagrams.push(...parsed.diagrams);detected||=!!parsed.richText.detected;degraded||=!!parsed.richText.degraded;compatVersion=Math.max(compatVersion,parsed.richText.compatVersion||0);
+    const messageID=esc(String(message?.id||scope));
+    for(const chunk of parsed.chunks)chunks.push('<section class="conversation-message message-'+role+'" data-message-index="'+index+'" data-message-id="'+messageID+'">'+chunk+'</section>');
+  }
+  return {chunks,outline,diagrams,richText:{detected,compatVersion,degraded,messageScoped:true}};
 }
 
 export function parseConversationSource(messages=[]) {

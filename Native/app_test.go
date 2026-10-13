@@ -111,7 +111,7 @@ func TestRawConversationPreservesMarkdownAndReplacesDOMFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 	doc, err := newApp().Conversation(c.ID)
-	if err != nil || !strings.Contains(doc.Text, raw) || strings.Contains(doc.Text, "broken flowchart") {
+	if err != nil || !strings.Contains(doc.Text, raw) || strings.Contains(doc.Text, "broken flowchart") || len(doc.Messages) != 2 || doc.Messages[1].Text != raw {
 		t.Fatal(doc, err)
 	}
 	source, err := newApp().ConversationSource(c.ID)

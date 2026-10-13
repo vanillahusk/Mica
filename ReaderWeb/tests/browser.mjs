@@ -24,9 +24,9 @@ await page.addInitScript(()=>{
 let id=0;
 const fence=String.fromCharCode(96).repeat(3);
 const code=(lang,text)=>fence+lang+'\n'+text+'\n'+fence;
-async function render(text,key='test',conversation=false){
+async function render(text,key='test',conversation=false,extra={}){
   const current=++id;
-  await page.evaluate(data=>window.mica.receive(data),{type:'render',id:current,key,text,conversation,offset:0});
+  await page.evaluate(data=>window.mica.receive(data),{type:'render',id:current,key,text,conversation,offset:0,...extra});
   await page.waitForFunction(id=>window.messages.some(m=>m.type==='rendered'&&m.id===id),current);
   return await page.evaluate(id=>window.messages.find(m=>m.type==='rendered'&&m.id===id),current);
 }
@@ -220,7 +220,7 @@ try {
   assert(scrolling.offset>0);
   const rich='<box onclick="window.unsafe=true"><title level="2">部署摘要</title><text>状态 <bold>正常</bold>，[手册](https://example.com)。</text><divider /><row><col>香港</col><col>0.11</col></row><MysteryWidget>未知内容保留</MysteryWidget><Link href="javascript:window.unsafe=true">危险链接</Link><AsyncImage src="javascript:window.unsafe=true" alt="危险图片" /></box><svg onload="window.unsafe=true"><script>window.unsafe=true</script></svg><script>window.unsafe=true</script>';
   const richMetrics=await render(rich,'gpt-rich',true);
-  assert.equal(richMetrics.richText.detected,true);assert.equal(richMetrics.richText.compatVersion,2);
+  assert.equal(richMetrics.richText.detected,true);assert.equal(richMetrics.richText.compatVersion,3);
   assert.equal(await page.locator('.gpt-box').count(),1);assert.equal(await page.locator('.gpt-col').count(),2);
   assert.match(await page.locator('.gpt-box').textContent(),/未知内容保留/);assert.equal(await page.locator('.gpt-box hr').count(),1);
   assert.equal(await page.locator('#article script,[onclick],[onload],a[href^="javascript:"],img[src^="javascript:"]').count(),0);
@@ -237,6 +237,12 @@ try {
   assert.equal(await page.locator('.gpt-box').count(),1,'empty icon containers are removed');
   assert.equal(await page.locator('.gpt-box').evaluate(el=>getComputedStyle(el).borderTopStyle),'none','plain box is layout-only');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'fidelity fixture has no page overflow');
+  const scopedMessages=[{id:'q1',role:'user',text:'第一问'},{id:'a1',role:'assistant',text:'<grid columns={2}><card>未闭合布局'},{id:'q2',role:'user',text:'第二问'},{id:'a2',role:'assistant',text:'普通文本 **Success** [GitHub](https://github.com/vanillahusk/Mica)'}];
+  const scoped=await render('scope-cache-key','gpt-message-scope',true,{messages:scopedMessages});
+  assert.equal(scoped.richText.messageScoped,true);assert.equal(scoped.outline.length,2);assert.equal(await page.locator('.conversation-message').count(),4);
+  const finalMessage=page.locator('.conversation-message[data-message-index="3"]');
+  assert.equal(await finalMessage.locator('strong').textContent(),'Success');assert.equal(await finalMessage.locator('a').getAttribute('href'),'https://github.com/vanillahusk/Mica');
+  assert.equal(await finalMessage.locator('.gpt-grid').count(),0,'an unclosed layout cannot cross a message boundary');assert.equal(await finalMessage.locator('pre').count(),0);
   await render('# 第二份文档','other');
   await render(long,'long');
   const cached=await render(long,'long');

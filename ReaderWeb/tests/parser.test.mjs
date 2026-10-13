@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {parseMarkdown,parseConversationSource} from '../src/parser.js';
+import {parseConversationMessages,parseMarkdown,parseConversationSource} from '../src/parser.js';
 import {adaptGptRichText} from '../src/gpt-richtext/index.js';
 test('CommonMark nesting, tables, reference links, tasks and footnotes', () => {
   const doc = '# 标题\n\n## 标题\n\n1. 第一项\n   - 嵌套 **加粗**\n\n- [x] 完成\n\n| 名称 | 值 |\n| :--- | ---: |\n| a | 1 |\n\n[引用][site] 和脚注[^1]\n\n[site]: https://example.com\n[^1]: 脚注内容\n\n~~删除~~ ==标记== H~2~O x^2^\n\n<details><summary>展开</summary>内容</details>';
@@ -51,7 +51,7 @@ test('unclosed and nested fences remain code, not headings or executable HTML', 
 test('GPT rich components become safe readable structures without changing fenced source', async () => {
   const source=await readFile(new URL('./fixtures/gpt-rich-content.md',import.meta.url),'utf8');
   const adapted=adaptGptRichText(source),result=parseMarkdown(source,true),html=result.chunks.join('');
-  assert.equal(adapted.detected,true);assert.equal(adapted.compatVersion,2);
+  assert.equal(adapted.detected,true);assert.equal(adapted.compatVersion,3);
   assert.match(html,/gpt-box/);assert.match(html,/gpt-row/);assert.match(html,/gpt-col/);
   assert.match(html,/<strong>可发布<\/strong>/);assert.match(html,/<em>等待复核<\/em>/);assert.match(html,/<hr>/);
   assert.match(html,/href="https:\/\/example\.com\/runbook"/);assert.doesNotMatch(html,/<img[^>]+javascript:/i);
@@ -96,4 +96,25 @@ test('source mode escapes exact stored messages instead of interpreting them', (
   const raw='<box onclick="run()">**保持原样**</box><script>bad()</script>',result=parseConversationSource([{id:'q',role:'user',text:raw},{id:'a',role:'assistant',text:'answer'}]),html=result.chunks.join('');
   assert.match(html,/&lt;box onclick=&quot;run\(\)&quot;&gt;\*\*保持原样\*\*/);assert.doesNotMatch(html,/<script>/);
   assert.equal(result.outline.length,1);assert.equal(result.richText.source,true);
+});
+
+test('each conversation message has an isolated component and Markdown scope', () => {
+  const messages=[
+    {id:'q1',role:'user',text:'第一问'},
+    {id:'a1',role:'assistant',text:'<grid columns={2}><card>未闭合布局'},
+    {id:'q2',role:'user',text:'第二问'},
+    {id:'a2',role:'assistant',text:'普通文本 **Success** [GitHub](https://github.com/vanillahusk/Mica)\n\n```mermaid\nflowchart LR\nA-->B\n```'},
+    {id:'a3',role:'assistant',text:'```mermaid\nflowchart LR\nC-->D\n```'}
+  ];
+  const result=parseConversationMessages(messages),html=result.chunks.join(''),second=html.indexOf('<section class="conversation-message message-assistant" data-message-index="3"');
+  assert.equal(result.richText.messageScoped,true);assert.deepEqual(result.outline.map(item=>item.title),['第一问','第二问']);
+  assert(second>0);assert.equal((html.slice(0,second).match(/<section\b/g)||[]).length,(html.slice(0,second).match(/<\/section>/g)||[]).length);
+  assert.match(html.slice(second),/<strong>Success<\/strong>/);assert.match(html.slice(second),/href="https:\/\/github\.com\/vanillahusk\/Mica"/);
+  assert.equal(new Set(result.diagrams.map(item=>item.id)).size,2);
+});
+
+test('unknown component recognition is conservative', () => {
+  assert.equal(adaptGptRichText('<foo>普通文字</foo>').detected,false);
+  assert.equal(adaptGptRichText('<T>泛型标记</T>').detected,false);
+  assert.equal(adaptGptRichText('<MysteryWidget>兼容正文</MysteryWidget>').detected,true);
 });

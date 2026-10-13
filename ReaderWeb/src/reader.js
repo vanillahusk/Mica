@@ -507,7 +507,7 @@ window.mica = {
       workerBusy=false;
       const cached=parsedCache.get(data.key);
       if(cached && cached.text===data.text && cached.conversation===data.conversation&&cached.richMode===(data.richMode||'rich')) void mount(cached.result,0,true);
-      else {workerBusy=true;worker.postMessage({id:data.id,text:data.text,conversation:data.conversation,richMode:data.richMode||'rich',rawMessages:data.rawMessages});}
+      else {workerBusy=true;worker.postMessage({id:data.id,text:data.text,conversation:data.conversation,richMode:data.richMode||'rich',messages:data.messages,rawMessages:data.rawMessages});}
     } else if(data.type==='edit' && data.id===currentId) void beginEditing(data);
     else if(data.type==='navigate') navigate(data.id);
     else if(data.type==='scroll') {window.scrollTo(0,data.offset);publishPosition();}
