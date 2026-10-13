@@ -51,7 +51,7 @@ test('unclosed and nested fences remain code, not headings or executable HTML', 
 test('GPT rich components become safe readable structures without changing fenced source', async () => {
   const source=await readFile(new URL('./fixtures/gpt-rich-content.md',import.meta.url),'utf8');
   const adapted=adaptGptRichText(source),result=parseMarkdown(source,true),html=result.chunks.join('');
-  assert.equal(adapted.detected,true);assert.equal(adapted.compatVersion,1);
+  assert.equal(adapted.detected,true);assert.equal(adapted.compatVersion,2);
   assert.match(html,/gpt-box/);assert.match(html,/gpt-row/);assert.match(html,/gpt-col/);
   assert.match(html,/<strong>可发布<\/strong>/);assert.match(html,/<em>等待复核<\/em>/);assert.match(html,/<hr>/);
   assert.match(html,/href="https:\/\/example\.com\/runbook"/);assert.doesNotMatch(html,/<img[^>]+javascript:/i);
@@ -65,6 +65,25 @@ test('GPT adapter tolerates malformed and deeply nested components', () => {
   assert.match(malformed,/仍然可读/);assert.doesNotMatch(malformed,/<\/?box\b/);
   const deep='<box>'.repeat(40)+'末端内容'+'</box>'.repeat(40),adapted=adaptGptRichText(deep);
   assert.equal(adapted.degraded,true);assert.match(adapted.markdown,/末端内容/);assert.doesNotMatch(adapted.markdown,/<\/?box>/);
+});
+
+test('GPT layout indentation is removed without losing Markdown semantics', () => {
+  const source='<box>\n    **Success**\n\n    [GitHub](https://github.com/vanillahusk/Mica)\n\n    - 第一项\n        - 嵌套项\n</box>';
+  const html=parseMarkdown(source,true).chunks.join('');
+  assert.match(html,/<strong>Success<\/strong>/);
+  assert.match(html,/<a href="https:\/\/github\.com\/vanillahusk\/Mica">GitHub<\/a>/);
+  assert.match(html,/<li[^>]*>第一项\s*<ul/);assert.doesNotMatch(html,/<pre>/);
+  const compact=parseMarkdown(source,true,'compact').chunks.join('');
+  assert.match(compact,/<strong>Success<\/strong>/);assert.match(compact,/href="https:\/\/github\.com\/vanillahusk\/Mica"/);
+  assert.doesNotMatch(compact,/<pre>/);
+});
+
+test('GPT layout keeps safe attributes, real indented code and removes empty shells', () => {
+  const source='<box><grid columns={2} gap={3}>\n  <card>Alpha</card>\n  <card>Beta</card>\n  <card>Gamma</card>\n</grid></box>\n<box><icon name="not-supported" /></box>\n<box><icon name="book-open" /></box>\n<card>\n    正文\n\n        const realCode = true;\n</card>';
+  const html=parseMarkdown(source,true).chunks.join('');
+  assert.match(html,/class="gpt-component gpt-grid gpt-gap-3"[^>]+data-columns="2"/);
+  assert.equal((html.match(/gpt-card/g)||[]).length,4);assert.equal((html.match(/gpt-box/g)||[]).length,2);
+  assert.match(html,/📖/);assert.match(html,/<pre><code>const realCode = true;/);
 });
 
 test('ordinary Markdown bypasses GPT compatibility unchanged', () => {

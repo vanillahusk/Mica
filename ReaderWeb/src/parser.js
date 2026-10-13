@@ -71,8 +71,20 @@ md.renderer.rules.blockquote_open = (tokens, i, options, env, self) =>
   (originalQuote ? originalQuote(tokens, i, options, env, self) : self.renderToken(tokens, i, options)) +
   (tokens[i].meta?.label ? '<div class="callout-label">' + esc(tokens[i].meta.label) + '</div>' : '');
 md.renderer.rules.gpt_component_open = (tokens,i) => {
-  const token=tokens[i],name=token.meta.name.replace(/[^a-z0-9-]/g,'');
-  return '<section class="gpt-component gpt-'+esc(name)+(token.meta.kind==='unknown'?' gpt-unknown':'')+'" data-gpt-component="'+esc(name)+'">';
+  const token=tokens[i],name=token.meta.name.replace(/[^a-z0-9-]/g,''),attrs=token.meta.attrs||{},classes=['gpt-component','gpt-'+name];
+  if(token.meta.kind==='unknown')classes.push('gpt-unknown');
+  const raw=value=>String(value??'').trim().replace(/^\{([\s\S]*)\}$/,'$1').replace(/^['"]|['"]$/g,'').trim().toLowerCase();
+  const scale=value=>({xs:'1',sm:'2',md:'3',lg:'4',xl:'5'}[raw(value)]||(/^[0-8]$/.test(raw(value))?raw(value):''));
+  const columns=/^[1-6]$/.test(raw(attrs.columns))?raw(attrs.columns):'';
+  const gap=scale(attrs.gap),padding=scale(attrs.padding),align=/^(start|center|end|stretch|left|right)$/.test(raw(attrs.align))?raw(attrs.align):'';
+  const justify=/^(start|center|end|between|around|evenly)$/.test(raw(attrs.justify))?raw(attrs.justify):'';
+  const direction=/^(row|column)$/.test(raw(attrs.direction))?raw(attrs.direction):'';
+  if(gap)classes.push('gpt-gap-'+gap);if(padding)classes.push('gpt-pad-'+padding);if(align)classes.push('gpt-align-'+align);
+  if(justify)classes.push('gpt-justify-'+justify);if(direction)classes.push('gpt-direction-'+direction);
+  const present=value=>value!==undefined&&!/^(|0|false|none|transparent)$/.test(raw(value));
+  const border=present(attrs.border),background=present(attrs.background);
+  if(name==='box'&&(border||background))classes.push('gpt-box-decorated');
+  return '<section class="'+classes.map(esc).join(' ')+'" data-gpt-component="'+esc(name)+'"'+(columns?' data-columns="'+columns+'"':'')+(border?' data-border="true"':'')+(background?' data-background="true"':'')+'>';
 };
 md.renderer.rules.gpt_component_close = () => '</section>';
 
@@ -82,7 +94,7 @@ function richTokens(text,env,conversation,mode) {
   for(const segment of adapted.segments){
     if(segment.type==='markdown'){for(const token of md.parse(segment.text,env))tokens.push(token);continue}
     const token=new Token(segment.type==='open'?'gpt_component_open':'gpt_component_close','section',segment.type==='open'?1:-1);
-    token.meta={name:segment.name,kind:segment.kind};tokens.push(token);
+    token.meta={name:segment.name,kind:segment.kind,attrs:segment.attrs||{}};tokens.push(token);
   }
   env.richText={detected:adapted.detected,compatVersion:adapted.compatVersion,degraded:!!adapted.degraded};
   return tokens;
