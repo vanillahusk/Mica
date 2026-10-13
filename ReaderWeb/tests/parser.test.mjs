@@ -51,7 +51,7 @@ test('unclosed and nested fences remain code, not headings or executable HTML', 
 test('GPT rich components become safe readable structures without changing fenced source', async () => {
   const source=await readFile(new URL('./fixtures/gpt-rich-content.md',import.meta.url),'utf8');
   const adapted=adaptGptRichText(source),result=parseMarkdown(source,true),html=result.chunks.join('');
-  assert.equal(adapted.detected,true);assert.equal(adapted.compatVersion,3);
+  assert.equal(adapted.detected,true);assert.equal(adapted.compatVersion,4);
   assert.match(html,/gpt-box/);assert.match(html,/gpt-row/);assert.match(html,/gpt-col/);
   assert.match(html,/<strong>可发布<\/strong>/);assert.match(html,/<em>等待复核<\/em>/);assert.match(html,/<hr>/);
   assert.match(html,/href="https:\/\/example\.com\/runbook"/);assert.doesNotMatch(html,/<img[^>]+javascript:/i);
@@ -117,4 +117,18 @@ test('unknown component recognition is conservative', () => {
   assert.equal(adaptGptRichText('<foo>普通文字</foo>').detected,false);
   assert.equal(adaptGptRichText('<T>泛型标记</T>').detected,false);
   assert.equal(adaptGptRichText('<MysteryWidget>兼容正文</MysteryWidget>').detected,true);
+});
+
+test('an unclosed layout recovers at a later Markdown chapter in the same message', () => {
+  const source='<grid columns={2}>\n  <card>第一张卡片</card>\n\n## 下一章节\n\n这里应该是普通 **正文**。';
+  const result=parseMarkdown(source,true),html=result.chunks.join(''),heading=html.indexOf('<h2');
+  assert.equal(result.richText.recovered,1);assert(heading>html.lastIndexOf('</section>'),'chapter escaped the unclosed grid');
+  assert.match(html,/<h2[^>]*>下一章节<\/h2>/);assert.match(html,/<strong>正文<\/strong>/);
+});
+
+test('a deliberately closed layout keeps headings inside and preserves source lines', () => {
+  const source='<grid columns={2}>\n\n    <card>第一张卡片</card>\n\n    ## 网格内标题\n</grid>\n\n## 外部标题';
+  const result=parseMarkdown(source,true),html=result.chunks.join(''),inside=html.indexOf('网格内标题'),outside=html.indexOf('外部标题'),gridClose=html.lastIndexOf('</section>',outside);
+  assert.equal(result.richText.recovered,0);assert(inside<gridClose);assert(outside>gridClose);
+  assert.match(html,/<h2 data-source-line="5"[^>]*>网格内标题<\/h2>/);
 });

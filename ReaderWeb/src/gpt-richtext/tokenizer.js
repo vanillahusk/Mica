@@ -31,8 +31,9 @@ function readTag(source,start) {
 function ticksAt(source,index){let n=0;while(source[index+n]==='`')n++;return n}
 
 export function tokenizeRichText(source) {
-  const tokens=[];let text='',i=0,lineStart=true,fence='';
-  const flush=()=>{if(text){tokens.push({type:'text',value:text});text=''}};
+  const tokens=[];let text='',i=0,lineStart=true,fence='',line=1,textLine=1;
+  const flush=()=>{if(text){tokens.push({type:'text',value:text,line:textLine});text=''}};
+  const append=value=>{if(!text)textLine=line;text+=value;const breaks=(value.match(/\n/g)||[]).length;line+=breaks;lineStart=value.endsWith('\n')};
   while(i<source.length){
     if(lineStart){
       let p=i,spaces=0;while(spaces<4&&source[p]===' '){p++;spaces++}
@@ -41,12 +42,12 @@ export function tokenizeRichText(source) {
     }
     if(!fence&&source[i]==='`'){
       const count=ticksAt(source,i),run='`'.repeat(count),end=source.indexOf(run,i+count);
-      if(end>=0){text+=source.slice(i,end+count);i=end+count;lineStart=false;continue}
+      if(end>=0){const value=source.slice(i,end+count);append(value);i=end+count;continue}
     }
     if(!fence&&source[i]==='<'){
-      const found=readTag(source,i);if(found){flush();tokens.push(found.token);i=found.end;lineStart=false;continue}
+      const found=readTag(source,i);if(found){flush();found.token.line=line;tokens.push(found.token);const raw=found.token.raw;line+=(raw.match(/\n/g)||[]).length;i=found.end;lineStart=raw.endsWith('\n');textLine=line;continue}
     }
-    const ch=source[i++];text+=ch;lineStart=ch==='\n';
+    const ch=source[i++];append(ch);
   }
   flush();return tokens;
 }

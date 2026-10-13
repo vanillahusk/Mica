@@ -92,11 +92,11 @@ function richTokens(text,env,conversation,mode) {
   const adapted=conversation?adaptGptRichText(text,{mode}):{segments:[{type:'markdown',text}],detected:false,compatVersion:0};
   const tokens=[];
   for(const segment of adapted.segments){
-    if(segment.type==='markdown'){for(const token of md.parse(segment.text,env))tokens.push(token);continue}
+    if(segment.type==='markdown'){const parsed=md.parse(segment.text,env),offset=Math.max(0,(segment.sourceLine||1)-1);for(const token of parsed){if(token.map&&offset)token.map=token.map.map(line=>line+offset);tokens.push(token)}continue}
     const token=new Token(segment.type==='open'?'gpt_component_open':'gpt_component_close','section',segment.type==='open'?1:-1);
     token.meta={name:segment.name,kind:segment.kind,attrs:segment.attrs||{}};tokens.push(token);
   }
-  env.richText={detected:adapted.detected,compatVersion:adapted.compatVersion,degraded:!!adapted.degraded};
+  env.richText={detected:adapted.detected,compatVersion:adapted.compatVersion,degraded:!!adapted.degraded,recovered:adapted.recovered||0};
   return tokens;
 }
 
@@ -151,17 +151,17 @@ export function parseMarkdown(text, conversation = false, richMode = 'rich', opt
 }
 
 export function parseConversationMessages(messages=[],richMode='rich') {
-  const chunks=[],outline=[],diagrams=[];let turn=0,detected=false,degraded=false,compatVersion=0;
+  const chunks=[],outline=[],diagrams=[];let turn=0,detected=false,degraded=false,compatVersion=0,recovered=0;
   for(const [index,message] of messages.slice(0,100000).entries()){
     const role=message?.role==='user'?'user':'assistant',text=String(message?.text||''),scope='m'+index;
     const source=role==='user'?'> [!QUESTION]\n'+text.split(/\r?\n/).map(line=>'> '+line).join('\n'):text;
     const parsed=parseMarkdown(source,role!=='user',richMode,{scope,questionStart:turn,suppressHeadings:true});
     if(role==='user'&&parsed.outline.length){turn=parsed.outline.at(-1).turn;outline.push(...parsed.outline)}
-    diagrams.push(...parsed.diagrams);detected||=!!parsed.richText.detected;degraded||=!!parsed.richText.degraded;compatVersion=Math.max(compatVersion,parsed.richText.compatVersion||0);
+    diagrams.push(...parsed.diagrams);detected||=!!parsed.richText.detected;degraded||=!!parsed.richText.degraded;compatVersion=Math.max(compatVersion,parsed.richText.compatVersion||0);recovered+=parsed.richText.recovered||0;
     const messageID=esc(String(message?.id||scope));
     for(const chunk of parsed.chunks)chunks.push('<section class="conversation-message message-'+role+'" data-message-index="'+index+'" data-message-id="'+messageID+'">'+chunk+'</section>');
   }
-  return {chunks,outline,diagrams,richText:{detected,compatVersion,degraded,messageScoped:true}};
+  return {chunks,outline,diagrams,richText:{detected,compatVersion,degraded,recovered,messageScoped:true}};
 }
 
 export function parseConversationSource(messages=[]) {

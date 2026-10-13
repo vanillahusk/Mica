@@ -1,4 +1,4 @@
-export const COMPAT_VERSION = 3;
+export const COMPAT_VERSION = 4;
 
 export const STRUCTURAL_COMPONENTS = new Set([
   'box','row','col','card','grid','grid-item','flow','flow-item','table','table-row','table-cell',
